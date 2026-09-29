@@ -1,0 +1,63 @@
+{
+  "restaurant": {
+    "nom": "Restaurant Teranga",
+    "slogan": "La teranga s'invite à table, face à l'océan.",
+    "adresse": "12, Route des Almadies, Dakar, Sénégal",
+    "telephone": "+221 33 800 00 00",
+    "whatsapp": "+221 77 000 00 00",
+    "email_reservation": "reservation@teranga-dakar.sn",
+    "email_evenements": "evenements@teranga-dakar.sn",
+    "coordonnees_gps": { "latitude": 14.7412, "longitude": -17.5147 },
+    "site_web": "https://www.teranga-dakar.sn",
+    "prix_moyen": "8 000 – 15 000 F CFA",
+    "moyens_paiement": ["Espèces (F CFA)", "Visa", "Mastercard", "Wave", "Orange Money"],
+    "note_google": { "moyenne": 4.8, "nombre_avis": 1247 }
+  },
+
+  "capacite": {
+    "terrasse": 120,
+    "salle_climatisee": 60,
+    "coin_salon_debout": 40,
+    "espace_ceremonie_max": 150,
+    "parking_places": 35,
+    "max_reservation_en_ligne": 20,
+    "couverts_max_par_creneau": 40
+  },
+
+  "horaires": {
+    "lundi":    [{ "debut": "12:00", "fin": "15:00" }, { "debut": "19:00", "fin": "23:00" }],
+    "mardi":    [{ "debut": "12:00", "fin": "15:00" }, { "debut": "19:00", "fin": "23:00" }],
+    "mercredi": [{ "debut": "12:00", "fin": "15:00" }, { "debut": "19:00", "fin": "23:00" }],
+    "jeudi":    [{ "debut": "12:00", "fin": "15:00" }, { "debut": "19:00", "fin": "23:00" }],
+    "vendredi": [{ "debut": "12:00", "fin": "15:00" }, { "debut": "19:00", "fin": "00:00" }],
+    "samedi":   [{ "debut": "12:00", "fin": "15:00" }, { "debut": "19:00", "fin": "00:00" }],
+    "dimanche": [{ "debut": "12:00", "fin": "16:00" }, { "debut": "19:00", "fin": "22:30" }]
+  },
+
+  "services": {
+    "midi": {
+      "libelle": "Déjeuner",
+      "creneaux": ["12:00", "12:30", "13:00", "13:30", "14:00", "14:30"]
+    },
+    "soir": {
+      "libelle": "Dîner",
+      "creneaux": ["19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"]
+    }
+  },
+
+  "formules": [
+    { "nom": "Formule déjeuner", "prix": 8900, "quand": "Lundi au vendredi, 12h–14h30", "inclus": "Entrée + plat + bissap maison" },
+    { "nom": "Brunch teranga", "prix": 12500, "quand": "Dimanche, 12h–16h", "inclus": "Buffets salé et sucré, jus à volonté. Enfant -10 ans : 6 500 F" },
+    { "nom": "Privatisation fête intime", "prix": 12500, "quand": "15 à 40 invités", "inclus": "Menu 3 plats, boissons maison, gâteau décoré, sonorisation" },
+    { "nom": "Mariage & cérémonie", "prix": 22000, "quand": "Jusqu'à 120 invités", "inclus": "Terrasse privatisée, menu cocktail + dîner, coordinatrice dédiée" },
+    { "nom": "Séminaire & entreprise", "prix": 10500, "quand": "Salle climatisée", "inclus": "Salle équipée, pauses café, facture entreprise" }
+  ],
+
+  "engagements": {
+    "delai_confirmation": "moins de 2 heures (10h–22h, 7j/7)",
+    "prepaiement": "aucun",
+    "annulation": "gratuite jusqu'à 3 heures avant",
+    "tolerance_retard": "30 minutes",
+    "avis_google": "demandé à chaque fin de repas"
+  }
+}

@@ -1,0 +1,14 @@
+# Dépendances (le projet n'en utilise aucune, au cas où)
+node_modules/
+
+# Données de production locales : ne jamais versionner les coordonnées des clients
+data/*.jsonl
+data/*.json
+!data/config-restaurant.json
+!data/.gitkeep
+
+# Divers
+.DS_Store
+*.log
+.env
+.env.local

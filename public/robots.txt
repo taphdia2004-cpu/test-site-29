@@ -1,0 +1,7 @@
+# Restaurant Teranga — Dakar
+User-agent: *
+Allow: /
+Disallow: /confirmation.html
+Disallow: /api/
+
+Sitemap: https://www.teranga-dakar.sn/sitemap.xml

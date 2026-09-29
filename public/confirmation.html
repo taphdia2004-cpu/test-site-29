@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demande envoyée — Restaurant Teranga Dakar</title>
+<meta name="description" content="Votre demande de réservation au Restaurant Teranga est enregistrée. Nous confirmons votre table par WhatsApp ou e-mail en moins de 2 heures.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0e3b38">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/styles.css">
+<style>
+  .check-hero { background: var(--success-bg); border: 1px solid #bfe6cd; border-radius: var(--r-lg); padding: clamp(24px, 4vw, 40px); display: grid; grid-template-columns: 76px 1fr; gap: var(--s-5); align-items: center; }
+  .check-badge { width: 76px; height: 76px; border-radius: 50%; background: var(--success); color: #fff; display: grid; place-items: center; }
+  .check-badge svg { width: 38px; height: 38px; }
+  .ref { font-family: var(--font-body); font-weight: 700; letter-spacing: .06em; background: var(--white); border: 1px dashed var(--success); color: #14562f; padding: 4px 12px; border-radius: var(--r-full); display: inline-block; font-size: .9rem; }
+  @media (max-width: 620px) { .check-hero { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<p class="offline-note" role="status">Vous êtes actuellement hors connexion : vous pouvez consulter le site, mais l’envoi d’une réservation nécessitera du réseau. Vous pouvez aussi nous appeler au +221 33 800 00 00.</p>
+
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="logo" href="/index.html" aria-label="Restaurant Teranga, retour à l'accueil">
+      <span class="logo-mark" aria-hidden="true">T</span>
+      <span>Teranga<small>Dakar · Almadies</small></span>
+    </a>
+    <nav class="nav" aria-label="Navigation principale">
+      <a href="/index.html">Accueil</a>
+      <a href="/menu.html">Menu</a>
+      <a href="/evenements.html">Événements</a>
+      <a href="/notre-histoire.html">Notre histoire</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <a class="header-phone" data-tel href="tel:+221338000000" data-track="clic_telephone" data-track-label="en-tête">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.2 18.85a19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.13 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        +221 33 800 00 00
+      </a>
+      <a class="btn btn-primary btn-sm" href="/reservation.html">Nouvelle réservation</a>
+      <button class="burger" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="drawer"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="mobile-drawer" id="drawer">
+  <a class="dl" href="/index.html">Accueil</a>
+  <a class="dl" href="/menu.html">Menu &amp; carte</a>
+  <a class="dl" href="/reservation.html">Réserver une table</a>
+  <a class="dl" href="/evenements.html">Événements &amp; groupes</a>
+  <a class="dl" href="/contact.html">Contact &amp; accès</a>
+  <div class="drawer-foot">
+    <a class="btn btn-ghost btn-block" data-tel href="tel:+221338000000">Appeler le restaurant</a>
+    <a class="btn btn-wa btn-block" data-wa href="#" id="wa-confirm">WhatsApp</a>
+  </div>
+</div>
+
+<main id="contenu">
+  <section style="padding-top:var(--s-7)">
+    <div class="wrap" style="max-width:900px">
+
+      <div class="check-hero" id="hero-check">
+        <div class="check-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <div>
+          <p class="eyebrow" style="color:#1f7a4d">Demande reçue · étape 2 sur 3</p>
+          <h1 style="font-size:clamp(1.7rem,3.6vw,2.4rem)">C'est enregistré, <span id="prenom">cher client</span> !</h1>
+          <p class="mt-3">Votre demande est arrivée sur le téléphone de l'équipe. <strong>Votre table n'est pas encore bloquée</strong> : nous vérifions la disponibilité et vous confirmons par WhatsApp ou e-mail <strong>en moins de 2 heures</strong>.</p>
+          <p class="mt-4">Votre référence : <span class="ref" id="ref">TER-0000</span></p>
+        </div>
+      </div>
+
+      <div class="recap is-visible mt-6" id="recap">
+        <strong>Récapitulatif de votre demande</strong>
+        <dl>
+          <dt>Date</dt><dd id="r-date">—</dd>
+          <dt>Heure</dt><dd id="r-heure">—</dd>
+          <dt>Personnes</dt><dd id="r-personnes">—</dd>
+          <dt>Emplacement</dt><dd id="r-emplacement">—</dd>
+          <dt>Référence</dt><dd id="r-ref">—</dd>
+        </dl>
+        <p class="muted mt-4">Une erreur dans ces informations ? Répondez simplement au message de confirmation ou appelez-nous : nous corrigeons en une minute.</p>
+      </div>
+
+      <div class="grid g-2 mt-6">
+        <a class="btn btn-light btn-lg" id="ics" href="#" data-track="clic_ajouter_calendrier" data-track-label="Ajouter à mon agenda" download="reservation-teranga.ics">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>
+          Ajouter à mon agenda
+        </a>
+        <a class="btn btn-wa btn-lg" id="wa-confirm-2" href="#" data-track="clic_whatsapp" data-track-label="confirmation">Envoyer la référence sur WhatsApp</a>
+        <a class="btn btn-ghost btn-lg" data-tel href="tel:+221338000000" data-track="clic_telephone" data-track-label="confirmation">Appeler le restaurant</a>
+        <a class="btn btn-ghost btn-lg" href="https://maps.google.com/?q=Route+des+Almadies+Dakar" target="_blank" rel="noopener" data-track="clic_itineraire" data-track-label="confirmation">Voir l'itinéraire</a>
+      </div>
+
+      <!-- Ce qui se passe maintenant -->
+      <div class="soft mt-7">
+        <h2 style="font-size:1.35rem">Ce qui se passe maintenant</h2>
+        <div class="timeline mt-5">
+          <div class="tl-item">
+            <strong>Vous êtes ici — étape 2 sur 3</strong>
+            <span>Nous vérifions la disponibilité de votre créneau et préparons votre table selon vos demandes particulières.</span>
+          </div>
+          <div class="tl-item">
+            <strong>Confirmation sous 2 heures (ou demain 10h si vous réservez tard)</strong>
+            <span>Vous recevez un message avec la confirmation définitive. Vous répondez « OK » et c'est réglé.</span>
+          </div>
+          <div class="tl-item">
+            <strong>Le jour J — rien à imprimer, rien à payer d'avance</strong>
+            <span>Donnez simplement votre nom à l'accueil. Votre table est gardée 30 minutes après l'heure prévue.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upsell utile, pas agressif -->
+      <div class="grid g-3 mt-7">
+        <article class="card">
+          <div class="card-media"><img src="/assets/img/thieboudienne.jpg" alt="Thieboudienne du pêcheur" width="1200" height="900" loading="lazy"></div>
+          <div class="card-body">
+            <h3>Décidez avant d'arriver</h3>
+            <p class="muted">Parcourez la carte et repérez votre plat : vous gagnerez du temps à table.</p>
+            <a class="btn btn-ghost btn-sm mt-4" href="/menu.html" data-track="cta_confirmation_menu">Voir le menu</a>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-media"><img src="/assets/img/evenement.jpg" alt="Table dressée pour un événement" width="900" height="1200" loading="lazy"></div>
+          <div class="card-body">
+            <h3>Vous reviendrez à plusieurs ?</h3>
+            <p class="muted">Anniversaire, mariage, séminaire : devis sous 24 h et dégustation offerte.</p>
+            <a class="btn btn-ghost btn-sm mt-4" href="/evenements.html" data-track="cta_confirmation_evenements">Formules événements</a>
+          </div>
+        </article>
+        <article class="soft" style="display:flex;flex-direction:column;justify-content:center">
+          <h3 style="font-size:1.15rem">Restons en contact</h3>
+          <p class="muted mt-3">Un e-mail par mois : nouveautés de la carte, soirées à thème et offres réservées aux habitués. Pas plus.</p>
+          <form id="form-newsletter" class="newsletter mt-4" data-success="#nl-success" data-error="#nl-error" novalidate>
+            <label class="sr-only" for="nl-email-2">Votre e-mail</label>
+            <input id="nl-email-2" name="email" type="email" placeholder="Votre e-mail" required>
+            <button class="btn btn-teal btn-sm" type="submit">M'inscrire</button>
+          </form>
+          <div id="nl-success" class="alert alert-success mt-3"><div>Merci, c'est noté !</div></div>
+          <div id="nl-error" class="alert alert-error mt-3"><div>Inscription impossible pour l'instant, réessayez plus tard.</div></div>
+        </article>
+      </div>
+
+      <p class="text-center mt-7 muted">Rien ne vient ? Vérifiez vos spams, ou appelez-nous au <a href="tel:+221338000000" style="color:var(--teal-700);font-weight:600">+221 33 800 00 00</a> — nous répondons de 10h à 22h, tous les jours.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-bottom" style="border:0;margin:0;padding:0">
+      <span>© <span data-year>2026</span> Restaurant Teranga — 12, Route des Almadies, Dakar. Site de démonstration.</span>
+      <nav class="flex gap-4" aria-label="Liens rapides">
+        <a href="/menu.html">Menu</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/evenements.html">Événements</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+<div class="sticky-actions">
+  <a class="btn btn-ghost" data-tel href="tel:+221338000000">Appeler</a>
+  <a class="btn btn-primary" id="wa-confirm-3" href="#">WhatsApp</a>
+</div>
+
+<script src="/assets/js/site.js" defer></script>
+<script>
+/* ---------------------------------------------------------------------------
+   Page de confirmation : relit la réservation dans l'URL pour la réafficher,
+   prépare un événement d'agenda (.ics) et un message WhatsApp de suivi.
+   --------------------------------------------------------------------------- */
+document.addEventListener('DOMContentLoaded', function () {
+  var p = new URLSearchParams(location.search);
+  var ref  = p.get('ref')  || 'TER-' + Math.floor(1000 + Math.random() * 8999);
+  var nom  = p.get('n')    || '';
+  var date = p.get('d')    || '';
+  var heure= p.get('h')    || '';
+  var pers = p.get('p')    || '';
+  var recap = null;
+
+  // Récupère les détails complets si le navigateur les a gardés
+  try { recap = JSON.parse(localStorage.getItem('teranga_derniere_reservation') || 'null'); } catch (e) { recap = null; }
+  if (recap) {
+    date = date || recap.date || ''; heure = heure || recap.heure || '';
+    pers = pers || recap.personnes || ''; nom = nom || recap.nom || '';
+  }
+
+  var prenom = (nom || '').trim().split(' ')[0];
+  if (prenom) document.getElementById('prenom').textContent = prenom;
+
+  document.getElementById('ref').textContent = ref;
+  document.getElementById('r-ref').textContent = ref;
+  document.getElementById('r-date').textContent = date
+    ? new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    : 'à confirmer';
+  document.getElementById('r-heure').textContent = heure ? heure.replace(':', 'h') : 'à confirmer';
+  document.getElementById('r-personnes').textContent = pers ? pers + (pers === '1' ? ' personne' : ' personnes') : '—';
+  document.getElementById('r-emplacement').textContent = recap && recap.emplacement ? recap.emplacement : 'terrasse ou salle selon disponibilité';
+
+  // Message WhatsApp de suivi
+  var msg = 'Bonjour, je viens d\'envoyer une demande de réservation (référence ' + ref + ')' +
+            (date ? ' pour le ' + date : '') + (heure ? ' à ' + heure.replace(':', 'h') : '') +
+            (pers ? ' pour ' + pers + ' personne(s)' : '') + '. Pouvez-vous me confirmer la disponibilité ?';
+  var wa = 'https://wa.me/221770000000?text=' + encodeURIComponent(msg);
+  ['wa-confirm', 'wa-confirm-2', 'wa-confirm-3'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) { el.href = wa; el.target = '_blank'; el.rel = 'noopener'; }
+  });
+
+  // Événement d'agenda (.ics) — aide le client à ne pas oublier sa réservation
+  var icsLink = document.getElementById('ics');
+  if (date && heure) {
+    var start = date.replace(/-/g, '') + 'T' + heure.replace(':', '') + '00';
+    var endH = (parseInt(heure.split(':')[0], 10) + 2);
+    var end = date.replace(/-/g, '') + 'T' + String(endH).padStart(2, '0') + heure.split(':')[1] + '00';
+    var ics = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Teranga Dakar//FR', 'BEGIN:VEVENT',
+      'UID:' + ref + '@teranga-dakar.sn',
+      'DTSTART;TZID=Africa/Dakar:' + start,
+      'DTEND;TZID=Africa/Dakar:' + end,
+      'SUMMARY:Repas au Restaurant Teranga (' + ref + ')',
+      'LOCATION:12 Route des Almadies, Dakar, Senegal',
+      'DESCRIPTION:Reservation ' + ref + ' - ' + pers + ' personne(s). Confirmation en cours. Tel +221 33 800 00 00',
+      'END:VEVENT', 'END:VCALENDAR'
+    ].join('\r\n');
+    icsLink.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
+  } else {
+    icsLink.style.opacity = .55;
+    icsLink.removeAttribute('download');
+    icsLink.addEventListener('click', function (e) { e.preventDefault(); });
+  }
+
+  if (window.trackTeranga) window.trackTeranga('vue_confirmation', { reference: ref });
+});
+</script>
+</body>
+</html>
