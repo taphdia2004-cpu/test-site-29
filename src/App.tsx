@@ -1,18 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Sparkles,
-  Download,
-  Plus,
-  Trash2,
+  ArrowLeft,
+  ArrowRight,
   Check,
+  ChevronDown,
   Copy,
-  Wand2,
-  Palette,
-  Type,
-  LayoutGrid,
+  Download,
   Image as ImageIcon,
-  Shuffle,
+  LayoutGrid,
+  Palette,
+  Plus,
   RotateCcw,
+  Search,
+  Sparkles,
+  Trash2,
+  Type,
+  Wand2,
 } from 'lucide-react';
 import {
   CarouselProject,
@@ -24,28 +27,39 @@ import {
   VisualStyleId,
 } from './types/carousel';
 import {
-  PLATFORM_FORMATS,
   EDITORIAL_THEMES,
   FONT_PAIRINGS,
+  PLATFORM_FORMATS,
   PRESET_CAROUSELS,
 } from './data/knowledgeBase';
 import {
-  ILLUSTRATION_CATALOG,
   getIllustrationSvg,
+  ILLUSTRATION_CATALOG,
 } from './data/illustrationsLibrary';
 import {
   CAROUSEL_TYPES,
+  matchIllustrationToText,
   VISUAL_STYLES,
   buildSmartAICarousel,
-  matchIllustrationToText,
 } from './utils/aiCarouselEngine';
 import { SlideCanvas } from './components/SlideCanvas';
 import {
-  downloadSingleSlidePng,
   downloadAllSlidesZip,
+  downloadSingleSlidePng,
 } from './utils/exportImages';
 
-const CATEGORIES = [
+const ACCENT_SWATCHES = [
+  '#BE4B2A',
+  '#158050',
+  '#005CE6',
+  '#6D4AFF',
+  '#DC2626',
+  '#F28C28',
+  '#0284C7',
+  '#84CC16',
+];
+
+const ILLUSTRATION_CATEGORIES = [
   'Toutes',
   'Croissance & Business',
   'Focus & Temps',
@@ -55,1234 +69,890 @@ const CATEGORIES = [
   'Argent & Psychologie',
 ] as const;
 
-const QUICK_IDEA_CHIPS = [
-  'Vaincre la procrastination et doubler son focus',
-  'Gagner du temps et des clients grâce à l’IA',
-  'La psychologie des prix pour vendre plus',
-  'Investir intelligemment quand on débute',
-  'Optimiser son sommeil et son énergie',
-  'Créer du contenu viral sur TikTok & Instagram',
-];
+type StudioTab = 'design' | 'content' | 'illustrations';
 
-const ACCENT_SWATCHES = [
-  { hex: '#FF5A26', name: 'Orange Vif' },
-  { hex: '#158050', name: 'Vert Émeraude' },
-  { hex: '#005CE6', name: 'Bleu Électrique' },
-  { hex: '#A855F7', name: 'Violet Néon' },
-  { hex: '#DC2626', name: 'Rouge Écarlate' },
-  { hex: '#F28C28', name: 'Ambre Pinceau' },
-  { hex: '#0284C7', name: 'Cyan Infographie' },
-  { hex: '#6D4AFF', name: 'Indigo UI' },
-  { hex: '#84CC16', name: 'Vert Lime' },
-  { hex: '#DB2777', name: 'Rose Magenta' },
-  { hex: '#BE4B2A', name: 'Terracotta' },
-  { hex: '#8C6239', name: 'Or Bronze' },
-];
-
-const BG_SWATCHES = [
-  { hex: '#FFFFFF', name: 'Blanc Pur' },
-  { hex: '#F7F3EB', name: 'Lin Crème' },
-  { hex: '#F3F1E7', name: 'Ivoire Doux' },
-  { hex: '#F0F6FF', name: 'Bleu Glace' },
-  { hex: '#F5F3FF', name: 'Lavande Pâle' },
-  { hex: '#FDF2F8', name: 'Rose Poudré' },
-  { hex: '#0B0910', name: 'Noir Cyber' },
-  { hex: '#0E1311', name: 'Noir Carbone' },
-  { hex: '#071E4A', name: 'Bleu Nuit' },
-  { hex: '#1F1216', name: 'Bordeaux Nuit' },
+const QUICK_IDEAS = [
+  'Créer du contenu qui attire des clients',
+  'Vaincre la procrastination',
+  'Utiliser l’IA pour gagner du temps',
 ];
 
 export function App() {
-  const [project, setProject] = useState<CarouselProject>(PRESET_CAROUSELS[0]);
-  const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
-  const [topicInput, setTopicInput] = useState<string>('');
-  const [selectedCarouselType, setSelectedCarouselType] =
-    useState<CarouselTypeId>('auto-smart');
-  const [illCategory, setIllCategory] = useState<string>('Toutes');
-  const [illSearch, setIllSearch] = useState<string>('');
-  const [rightTab, setRightTab] = useState<
-    'designs' | 'fonts' | 'illustrations' | 'slide'
-  >('designs');
-  const [isGeneratingAI, setIsGeneratingAI] = useState<boolean>(false);
-  const [isExporting, setIsExporting] = useState<boolean>(false);
-  const [exportProgress, setExportProgress] = useState<string>('');
-  const [copiedCaption, setCopiedCaption] = useState<boolean>(false);
+  const [project, setProject] = useState<CarouselProject>(() => PRESET_CAROUSELS[0]);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const [topicInput, setTopicInput] = useState('');
+  const [carouselType, setCarouselType] = useState<CarouselTypeId>('auto-smart');
+  const [activeTab, setActiveTab] = useState<StudioTab>('design');
+  const [illustrationCategory, setIllustrationCategory] = useState<string>('Toutes');
+  const [illustrationSearch, setIllustrationSearch] = useState('');
+  const [viewportWidth, setViewportWidth] = useState(1440);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState('');
+  const [captionCopied, setCaptionCopied] = useState(false);
 
-  const currentFormat =
-    PLATFORM_FORMATS.find((f) => f.id === project.formatId) ||
+  useEffect(() => {
+    const updateViewport = () => setViewportWidth(window.innerWidth);
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    return () => window.removeEventListener('resize', updateViewport);
+  }, []);
+
+  const format =
+    PLATFORM_FORMATS.find((item) => item.id === project.formatId) ||
     PLATFORM_FORMATS[0];
-  const baseTheme =
-    EDITORIAL_THEMES.find((t) => t.id === project.themeId) ||
+  const theme =
+    EDITORIAL_THEMES.find((item) => item.id === project.themeId) ||
     EDITORIAL_THEMES[0];
-  const currentFonts =
-    FONT_PAIRINGS.find((f) => f.id === project.fontPairingId) ||
+  const fontPairing =
+    FONT_PAIRINGS.find((item) => item.id === project.fontPairingId) ||
     FONT_PAIRINGS[0];
+  const visualStyle: VisualStyleId = project.visualStyle || 'skale-pinned-notes';
+  const styleInfo = VISUAL_STYLES.find((item) => item.id === visualStyle) || VISUAL_STYLES[0];
+  const activeAccent = project.customAccentColor || theme.accent;
+  const activeBackground = project.customBgColor || theme.bgPrimary;
   const currentSlide = project.slides[activeSlideIndex] || project.slides[0];
-  const activeVisualStyle: VisualStyleId =
-    project.visualStyle || 'skale-pinned-notes';
-  const activeAccent = project.customAccentColor || baseTheme.accent;
-  const activeBg = project.customBgColor || baseTheme.bgPrimary;
 
-  const cardScale =
-    currentFormat.height === 1920
-      ? 0.23
-      : currentFormat.height === 1440
-      ? 0.28
-      : currentFormat.height === 1350
-      ? 0.29
-      : 0.33;
+  const previewWidth = Math.min(
+    viewportWidth < 1280 ? viewportWidth * 0.8 : viewportWidth * 0.56,
+    650
+  );
+  const previewScale = Math.min(
+    0.56,
+    previewWidth / format.width,
+    720 / format.height
+  );
+  const thumbnailScale = Math.min(
+    0.14,
+    230 / format.height,
+    132 / format.width
+  );
+
+  const filteredIllustrations = useMemo(() => {
+    const query = illustrationSearch.trim().toLocaleLowerCase('fr');
+    return ILLUSTRATION_CATALOG.filter((item) => {
+      const categoryMatches =
+        illustrationCategory === 'Toutes' || item.category === illustrationCategory;
+      const queryMatches =
+        !query ||
+        item.label.toLocaleLowerCase('fr').includes(query) ||
+        item.category.toLocaleLowerCase('fr').includes(query);
+      return categoryMatches && queryMatches;
+    });
+  }, [illustrationCategory, illustrationSearch]);
 
   const updateProject = (patch: Partial<CarouselProject>) => {
-    setProject((prev) => ({ ...prev, ...patch }));
+    setProject((previous) => ({ ...previous, ...patch }));
   };
 
   const updateActiveSlide = (patch: Partial<SlideItem>) => {
-    setProject((prev) => {
-      const nextSlides = prev.slides.map((s, idx) =>
-        idx === activeSlideIndex ? { ...s, ...patch } : s
-      );
-      return { ...prev, slides: nextSlides };
-    });
+    setProject((previous) => ({
+      ...previous,
+      slides: previous.slides.map((slide, index) =>
+        index === activeSlideIndex ? { ...slide, ...patch } : slide
+      ),
+    }));
+  };
+
+  const fetchResearchSnippet = async (query: string) => {
+    let snippet = '';
+
+    try {
+      const response = await fetch(`/api/ai-research?q=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (typeof data?.snippet === 'string') snippet = data.snippet;
+      }
+    } catch {
+      // Continue with the public research fallback below.
+    }
+
+    if (!snippet) {
+      try {
+        const url = new URL('https://fr.wikipedia.org/w/api.php');
+        url.searchParams.set('action', 'query');
+        url.searchParams.set('list', 'search');
+        url.searchParams.set('srsearch', query);
+        url.searchParams.set('utf8', '1');
+        url.searchParams.set('format', 'json');
+        url.searchParams.set('srlimit', '2');
+        url.searchParams.set('origin', '*');
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          snippet = data?.query?.search?.[0]?.snippet
+            ?.replace(/<[^>]+>/g, '')
+            .trim() || '';
+        }
+      } catch {
+        // The built-in content engine still works without web research.
+      }
+    }
+
+    return snippet;
   };
 
   const runAIGeneration = async (
-    ideaText: string,
-    typeOverride?: CarouselTypeId
+    requestedTopic: string,
+    requestedType: CarouselTypeId = carouselType
   ) => {
-    const cleanIdea = ideaText.trim();
-    if (!cleanIdea) return;
+    const cleanTopic = requestedTopic.trim();
+    if (!cleanTopic || isGenerating) return;
 
-    setIsGeneratingAI(true);
-    let webSnippet = '';
+    setTopicInput(cleanTopic);
+    setIsGenerating(true);
     try {
-      const res = await fetch(
-        `/api/ai-research?q=${encodeURIComponent(cleanIdea)}`
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.snippet && data.snippet.length > 30) {
-          webSnippet = data.snippet;
-        }
-      }
-    } catch {
-      // The local research endpoint is optional; try a public source next.
+      const webSnippet = await fetchResearchSnippet(cleanTopic);
+      const generated = buildSmartAICarousel({
+        topic: cleanTopic,
+        carouselType: requestedType,
+        visualStyle,
+        formatId: project.formatId,
+        themeId: project.themeId,
+        fontPairingId: project.fontPairingId,
+        authorHandle: project.authorHandle,
+        customAccentColor: project.customAccentColor,
+        webSnippet,
+      });
+
+      setProject({
+        ...generated,
+        visualStyle,
+        customAccentColor: project.customAccentColor,
+        customBgColor: project.customBgColor,
+      });
+      setActiveSlideIndex(0);
+      setActiveTab('design');
+    } finally {
+      setIsGenerating(false);
     }
-
-    // Static hosting (such as GitHub Pages) has no Node API route. Query
-    // Wikipedia directly as a lightweight research fallback, then continue
-    // with the built-in semantic engine if the browser/network blocks it.
-    if (!webSnippet) {
-      try {
-        const researchUrl = new URL('https://fr.wikipedia.org/w/api.php');
-        researchUrl.searchParams.set('action', 'query');
-        researchUrl.searchParams.set('list', 'search');
-        researchUrl.searchParams.set('srsearch', cleanIdea);
-        researchUrl.searchParams.set('utf8', '1');
-        researchUrl.searchParams.set('format', 'json');
-        researchUrl.searchParams.set('srlimit', '2');
-        researchUrl.searchParams.set('origin', '*');
-        const response = await fetch(researchUrl);
-        if (response.ok) {
-          const data = await response.json();
-          const snippet = data?.query?.search?.[0]?.snippet
-            ?.replace(/<[^>]+>/g, '')
-            .trim();
-          if (snippet && snippet.length > 30) webSnippet = snippet;
-        }
-      } catch {
-        // Keep using the built-in semantic generator when web research is unavailable.
-      }
-    }
-
-    const generated = buildSmartAICarousel({
-      topic: cleanIdea,
-      carouselType: typeOverride || selectedCarouselType,
-      visualStyle: activeVisualStyle,
-      formatId: project.formatId,
-      themeId: project.themeId,
-      fontPairingId: project.fontPairingId,
-      authorHandle: project.authorHandle,
-      customAccentColor: project.customAccentColor,
-      webSnippet,
-    });
-
-    // Preserve user's chosen custom colors & style so their color choice always stays active
-    setProject({
-      ...generated,
-      visualStyle: activeVisualStyle,
-      customAccentColor: project.customAccentColor,
-      customBgColor: project.customBgColor,
-    });
-    setActiveSlideIndex(0);
-    setIsGeneratingAI(false);
   };
 
-  const handleGenerateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!topicInput.trim()) return;
-    runAIGeneration(topicInput);
+  const handleGenerateSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void runAIGeneration(topicInput);
   };
 
-  const handleAutoMatchAllIllustrations = () => {
+  const handleAutoIllustrations = () => {
     const used = new Set<string>();
-    const updatedSlides = project.slides.map((s, i) => {
-      const matched = matchIllustrationToText(
-        `${s.title} ${s.subtitle || ''} ${(s.bulletPoints || []).join(' ')}`,
-        i
+    const slides = project.slides.map((slide, index) => {
+      let illustrationId = matchIllustrationToText(
+        `${slide.title} ${slide.subtitle || ''} ${(slide.bulletPoints || []).join(' ')}`,
+        index
       );
-      let finalId = matched;
-      if (used.has(finalId)) {
-        const alt = ILLUSTRATION_CATALOG.find((item) => !used.has(item.id));
-        if (alt) finalId = alt.id;
+      if (used.has(illustrationId)) {
+        const alternative = ILLUSTRATION_CATALOG.find((item) => !used.has(item.id));
+        if (alternative) illustrationId = alternative.id;
       }
-      used.add(finalId);
-      return { ...s, illustrationId: finalId };
+      used.add(illustrationId);
+      return { ...slide, illustrationId };
     });
-    updateProject({ slides: updatedSlides });
+    updateProject({ slides });
   };
 
   const handleAddSlide = () => {
+    const newIndex = activeSlideIndex + 1;
     const newSlide: SlideItem = {
-      id: `s-${Date.now()}`,
+      id: `slide-${Date.now()}`,
       layout: 'numbered-insight',
-      kicker: `0${project.slides.length} — POINT CLÉ`,
-      title: 'Une idée *simple et directe* qui change tout.',
-      subtitle:
-        'Explique en une phrase courte comment appliquer ce conseil dès aujourd’hui.',
+      kicker: 'NOUVELLE IDÉE',
+      title: 'Une idée *simple et directe* à retenir.',
+      subtitle: 'Explique ici comment l’appliquer dès aujourd’hui.',
       body: '',
-      illustrationId:
-        ILLUSTRATION_CATALOG[
-          project.slides.length % ILLUSTRATION_CATALOG.length
-        ].id,
+      illustrationId: ILLUSTRATION_CATALOG[project.slides.length % ILLUSTRATION_CATALOG.length].id,
       swipePrompt: 'Continuer →',
     };
-    const nextSlides = [...project.slides];
-    nextSlides.splice(activeSlideIndex + 1, 0, newSlide);
-    updateProject({ slides: nextSlides });
-    setActiveSlideIndex(activeSlideIndex + 1);
+    const slides = [...project.slides];
+    slides.splice(newIndex, 0, newSlide);
+    updateProject({ slides });
+    setActiveSlideIndex(newIndex);
+    setActiveTab('content');
   };
 
-  const handleDeleteSlide = (idx: number) => {
+  const handleDeleteSlide = (indexToDelete: number) => {
     if (project.slides.length <= 2) return;
-    const nextSlides = project.slides.filter((_, i) => i !== idx);
-    updateProject({ slides: nextSlides });
-    setActiveSlideIndex(
-      Math.max(0, Math.min(activeSlideIndex, nextSlides.length - 1))
+    const slides = project.slides.filter((_, index) => index !== indexToDelete);
+    updateProject({ slides });
+    setActiveSlideIndex((previous) =>
+      indexToDelete < previous ? previous - 1 : Math.min(previous, slides.length - 1)
     );
   };
 
-  const handleExportCurrentPng = async () => {
+  const handleDownloadCurrent = async () => {
+    if (!currentSlide) return;
     setIsExporting(true);
-    setExportProgress('PNG...');
     try {
       await downloadSingleSlidePng(
         project,
         currentSlide,
         activeSlideIndex,
-        baseTheme,
-        currentFormat
+        theme,
+        format
       );
     } finally {
       setIsExporting(false);
-      setExportProgress('');
     }
   };
 
-  const handleExportAllZip = async () => {
+  const handleDownloadAll = async () => {
     setIsExporting(true);
     try {
-      await downloadAllSlidesZip(
-        project,
-        baseTheme,
-        currentFormat,
-        (cur, tot) => setExportProgress(`${cur}/${tot} PNG`)
-      );
+      await downloadAllSlidesZip(project, theme, format, (current, total) => {
+        setExportProgress(`${current}/${total}`);
+      });
     } finally {
       setIsExporting(false);
       setExportProgress('');
     }
   };
 
-  const handleCopyCaption = () => {
+  const handleCopyCaption = async () => {
     const text = `${project.caption}\n\n${project.hashtags.join(' ')}`;
-    navigator.clipboard.writeText(text);
-    setCopiedCaption(true);
-    setTimeout(() => setCopiedCaption(false), 2000);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCaptionCopied(true);
+      window.setTimeout(() => setCaptionCopied(false), 1800);
+    } catch {
+      setCaptionCopied(false);
+    }
   };
 
-  const filteredIllustrations = ILLUSTRATION_CATALOG.filter((item) => {
-    const matchCat = illCategory === 'Toutes' || item.category === illCategory;
-    const matchQuery =
-      !illSearch.trim() ||
-      item.name.toLowerCase().includes(illSearch.toLowerCase()) ||
-      item.category.toLowerCase().includes(illSearch.toLowerCase());
-    return matchCat && matchQuery;
-  });
+  const handlePaletteSelect = (themeId: EditorialThemeId, accent: string) => {
+    updateProject({
+      themeId,
+      customAccentColor: accent,
+      customBgColor: undefined,
+    });
+  };
+
+  const handleResetColors = () => {
+    updateProject({
+      themeId: EDITORIAL_THEMES[0].id,
+      customAccentColor: undefined,
+      customBgColor: undefined,
+    });
+  };
+
+  const tabs: { id: StudioTab; label: string; icon: React.ReactNode }[] = [
+    { id: 'design', label: 'Design', icon: <Palette className="h-4 w-4" /> },
+    { id: 'content', label: 'Texte', icon: <Type className="h-4 w-4" /> },
+    { id: 'illustrations', label: 'Illustrations', icon: <ImageIcon className="h-4 w-4" /> },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#F5F2EB] text-[#181512] flex flex-col">
-      {/* TOP HEADER BAR */}
-      <header className="sticky top-0 z-30 bg-[#FAF8F5]/95 backdrop-blur border-b border-[#E5DEC9] px-5 py-3">
-        <div className="max-w-[1640px] mx-auto flex flex-wrap items-center justify-between gap-4">
-          {/* Brand */}
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-[#F4F1EA] text-[#211E1A]">
+      <header className="sticky top-0 z-30 border-b border-[#E8E2D8] bg-[#FBFAF7]/95 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1480px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-serif italic text-lg shadow-sm"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white shadow-sm"
               style={{ backgroundColor: activeAccent }}
             >
               A
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-semibold text-sm tracking-tight text-[#181512]">
-                  Atelier Carrousel IA
-                </h1>
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#EFECE4] text-[#6E675F]">
-                  22 Designs · Couleurs 100% Personnalisables · 48 Illustrations
-                </span>
-              </div>
-              <p className="text-xs text-[#6E675F]">
-                Change librement la couleur de tous les designs, styles, fonds et illustrations
-              </p>
+            <div className="min-w-0">
+              <h1 className="truncate text-sm font-bold tracking-tight">Atelier Carrousel</h1>
+              <p className="text-[11px] text-[#777168]">TikTok & Instagram · création simplifiée</p>
             </div>
           </div>
 
-          {/* Format Selector */}
-          <div className="flex items-center bg-[#EFECE4] p-1 rounded-xl">
-            {PLATFORM_FORMATS.map((fmt) => {
-              const active = fmt.id === project.formatId;
-              return (
-                <button
-                  key={fmt.id}
-                  onClick={() => updateProject({ formatId: fmt.id })}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    active
-                      ? 'bg-white text-[#181512] shadow-sm'
-                      : 'text-[#6E675F] hover:text-[#181512]'
-                  }`}
-                >
-                  {fmt.name}{' '}
-                  <span className="opacity-60">({fmt.aspectRatio})</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Export Actions */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <label className="relative">
+              <span className="sr-only">Format du carrousel</span>
+              <select
+                value={project.formatId}
+                onChange={(event) => updateProject({ formatId: event.target.value as CarouselProject['formatId'] })}
+                className="h-10 max-w-[190px] appearance-none rounded-xl border border-[#E3DDD2] bg-white py-2 pl-3 pr-9 text-xs font-semibold text-[#29251F] outline-none transition focus:border-[#AFA79B]"
+              >
+                {PLATFORM_FORMATS.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name} · {item.aspectRatio}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#777168]" />
+            </label>
             <button
-              onClick={handleExportCurrentPng}
+              onClick={() => void handleDownloadAll()}
               disabled={isExporting}
-              className="px-3.5 py-2 rounded-xl border border-[#DCD4C4] bg-white hover:bg-[#F5F2EB] text-xs font-medium text-[#181512] flex items-center gap-1.5 transition"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#211E1A] px-3.5 text-xs font-semibold text-white transition hover:bg-[#413A33] disabled:cursor-wait disabled:opacity-60 sm:px-4"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Slide {activeSlideIndex + 1} (PNG)</span>
-            </button>
-
-            <button
-              onClick={handleExportAllZip}
-              disabled={isExporting}
-              className="px-4 py-2 rounded-xl text-white text-xs font-semibold flex items-center gap-2 shadow-sm hover:opacity-95 transition"
-              style={{ backgroundColor: '#181512' }}
-            >
-              <Download className="w-4 h-4" />
-              <span>
-                {isExporting
-                  ? `Export ${exportProgress}`
-                  : `Télécharger tout (${project.slides.length} PNG)`}
-              </span>
+              <Download className="h-4 w-4" />
+              <span>{isExporting ? `Export ${exportProgress}` : 'Exporter le carrousel'}</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* AI COMMAND BAR */}
-      <section className="bg-[#FAF8F5] border-b border-[#E5DEC9] px-5 py-3.5">
-        <div className="max-w-[1640px] mx-auto flex flex-col gap-2.5">
-          <form
-            onSubmit={handleGenerateSubmit}
-            className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2.5"
-          >
-            <div className="relative flex-1">
-              <Wand2
-                className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2"
-                style={{ color: activeAccent }}
-              />
+      <main className="mx-auto w-full max-w-[1480px] space-y-5 px-4 py-5 sm:px-6 sm:py-7">
+        <section className="rounded-[26px] border border-[#E6DFD4] bg-[#FBFAF7] p-4 shadow-[0_10px_36px_-28px_rgba(49,39,24,0.25)] sm:p-6">
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8B8174]">Ton studio créatif</p>
+              <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Une idée suffit.</h2>
+              <p className="mt-1 text-sm text-[#70695F]">L’IA prépare le texte, la structure et les illustrations.</p>
+            </div>
+            <span className="hidden text-xs text-[#8B8174] sm:block">22 styles · 48 illustrations · PNG</span>
+          </div>
+
+          <form onSubmit={handleGenerateSubmit} className="flex flex-col gap-2.5 lg:flex-row">
+            <div className="relative min-w-0 flex-1">
+              <Wand2 className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#81766A]" />
               <input
-                type="text"
+                required
                 value={topicInput}
-                onChange={(e) => setTopicInput(e.target.value)}
-                placeholder="Écris simplement ton idée (ex: La psychologie des prix, Vaincre la procrastination, Gagner des clients avec l'IA...)"
-                className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-white border border-[#DCD4C4] text-sm text-[#181512] placeholder-[#8E867B] focus:outline-none focus:border-[#181512] shadow-sm"
+                onChange={(event) => setTopicInput(event.target.value)}
+                placeholder="Ex. Comment trouver ses premiers clients grâce à Instagram…"
+                className="h-12 w-full rounded-xl border border-[#E3DDD2] bg-white pl-11 pr-4 text-sm outline-none transition placeholder:text-[#A49C91] focus:border-[#81766A] focus:ring-2 focus:ring-[#81766A]/10"
               />
             </div>
-
-            <select
-              value={selectedCarouselType}
-              onChange={(e) => {
-                const newType = e.target.value as CarouselTypeId;
-                setSelectedCarouselType(newType);
-                runAIGeneration(topicInput || project.topic, newType);
-              }}
-              className="px-3.5 py-2.5 rounded-xl bg-white border border-[#DCD4C4] text-xs font-medium text-[#181512] focus:outline-none cursor-pointer"
-            >
-              {CAROUSEL_TYPES.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} ({t.badge})
-                </option>
-              ))}
-            </select>
-
+            <label className="relative lg:w-[250px]">
+              <span className="sr-only">Type de carrousel</span>
+              <select
+                value={carouselType}
+                onChange={(event) => setCarouselType(event.target.value as CarouselTypeId)}
+                className="h-12 w-full appearance-none rounded-xl border border-[#E3DDD2] bg-white px-3.5 pr-9 text-xs font-semibold outline-none transition focus:border-[#81766A]"
+              >
+                {CAROUSEL_TYPES.map((item) => (
+                  <option key={item.id} value={item.id}>{item.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#777168]" />
+            </label>
             <button
               type="submit"
-              disabled={isGeneratingAI}
-              className="px-5 py-2.5 rounded-xl text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm hover:opacity-95 transition shrink-0"
-              style={{ backgroundColor: '#181512' }}
+              disabled={isGenerating || !topicInput.trim()}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white shadow-sm transition hover:brightness-105 disabled:cursor-wait disabled:opacity-60"
+              style={{ backgroundColor: activeAccent }}
             >
-              <Sparkles className="w-4 h-4 text-[#F3B34C]" />
-              <span>
-                {isGeneratingAI
-                  ? 'Rédaction & Illustrations IA...'
-                  : 'L’IA crée tout le carrousel'}
-              </span>
+              <Sparkles className="h-4 w-4" />
+              {isGenerating ? 'Création en cours…' : 'Créer mon carrousel'}
             </button>
           </form>
 
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-medium text-[#6E675F] mr-1">
-                Idées rapides :
-              </span>
-              {QUICK_IDEA_CHIPS.map((idea) => (
-                <button
-                  key={idea}
-                  type="button"
-                  onClick={() => {
-                    setTopicInput(idea);
-                    runAIGeneration(idea);
-                  }}
-                  className="text-[11px] px-2.5 py-1 rounded-full bg-[#EFECE4] hover:bg-[#E4DFD3] text-[#181512] transition"
-                >
-                  {idea}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* MAIN WORKSPACE */}
-      <main className="flex-1 max-w-[1640px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 p-5">
-        {/* LEFT COLUMN (7/12): QUICK STYLE & COLOR BAR + STORYBOARD */}
-        <div className="lg:col-span-7 flex flex-col gap-4">
-          {/* BARRE DIRECTE DE STYLE & DE COULEURS POUR TOUS LES DESIGNS */}
-          <div className="bg-[#FAF8F5] border border-[#E5DEC9] rounded-2xl p-3.5 flex flex-col gap-3">
-            {/* Row 1: 22 Styles */}
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#6E675F]">
-                  1. Choisir le Design du Carrousel (22 Styles) :
-                </span>
-                <button
-                  onClick={handleAutoMatchAllIllustrations}
-                  className="text-[11px] px-2.5 py-1 rounded-lg bg-[#EFECE4] hover:bg-[#E4DFD3] text-[#181512] font-medium flex items-center gap-1 transition"
-                >
-                  <Shuffle className="w-3 h-3" />
-                  <span>Illustrations auto IA</span>
-                </button>
-              </div>
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                {VISUAL_STYLES.map((st) => {
-                  const active = activeVisualStyle === st.id;
-                  return (
-                    <button
-                      key={st.id}
-                      onClick={() => updateProject({ visualStyle: st.id })}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
-                        active
-                          ? 'bg-[#181512] text-white shadow-sm'
-                          : 'bg-white border border-[#E5DEC9] text-[#181512] hover:bg-[#EFECE4]'
-                      }`}
-                    >
-                      {st.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Row 2: Instant Color Picker for ALL 22 Designs (Accent + Background) */}
-            <div className="pt-2.5 border-t border-[#E5DEC9] flex flex-wrap items-center justify-between gap-4">
-              {/* Accent Color Swatches */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#181512]">
-                  2. Couleur du Design :
-                </span>
-                {ACCENT_SWATCHES.map((sw) => {
-                  const isSel =
-                    activeAccent.toLowerCase() === sw.hex.toLowerCase();
-                  return (
-                    <button
-                      key={sw.hex}
-                      onClick={() =>
-                        updateProject({ customAccentColor: sw.hex })
-                      }
-                      title={sw.name}
-                      className={`w-6 h-6 rounded-full border-2 transition-transform ${
-                        isSel
-                          ? 'scale-125 border-[#181512] shadow-md'
-                          : 'border-white shadow-sm hover:scale-110'
-                      }`}
-                      style={{ backgroundColor: sw.hex }}
-                    />
-                  );
-                })}
-                <label
-                  className="px-2 py-1 rounded-lg bg-white border border-[#DCD4C4] text-[11px] font-semibold cursor-pointer flex items-center gap-1.5 hover:bg-[#EFECE4]"
-                  title="Choisir n'importe quelle couleur"
-                >
-                  <input
-                    type="color"
-                    value={activeAccent}
-                    onChange={(e) =>
-                      updateProject({ customAccentColor: e.target.value })
-                    }
-                    className="w-4 h-4 border-0 bg-transparent cursor-pointer"
-                  />
-                  <span>Autre</span>
-                </label>
-              </div>
-
-              {/* Background Color Swatches */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#181512] mr-1">
-                  3. Fond :
-                </span>
-                <button
-                  onClick={() => updateProject({ customBgColor: undefined })}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-semibold border transition ${
-                    !project.customBgColor
-                      ? 'bg-[#181512] text-white border-[#181512]'
-                      : 'bg-white text-[#6E675F] border-[#DCD4C4] hover:text-[#181512]'
-                  }`}
-                  title="Laisser le style gérer l'alternance des fonds automatiquement"
-                >
-                  Auto
-                </button>
-                {BG_SWATCHES.slice(0, 7).map((sw) => {
-                  const isSel =
-                    project.customBgColor?.toLowerCase() ===
-                    sw.hex.toLowerCase();
-                  return (
-                    <button
-                      key={sw.hex}
-                      onClick={() => updateProject({ customBgColor: sw.hex })}
-                      title={`Fond ${sw.name}`}
-                      className={`w-6 h-6 rounded-full border-2 transition-transform ${
-                        isSel
-                          ? 'scale-125 border-[#181512] shadow-md'
-                          : 'border-[#DCD4C4] shadow-sm hover:scale-110'
-                      }`}
-                      style={{ backgroundColor: sw.hex }}
-                    />
-                  );
-                })}
-                <label
-                  className="px-2 py-1 rounded-lg bg-white border border-[#DCD4C4] text-[11px] font-semibold cursor-pointer flex items-center gap-1 hover:bg-[#EFECE4]"
-                  title="Choisir n'importe quelle couleur de fond"
-                >
-                  <input
-                    type="color"
-                    value={activeBg}
-                    onChange={(e) =>
-                      updateProject({ customBgColor: e.target.value })
-                    }
-                    className="w-4 h-4 border-0 bg-transparent cursor-pointer"
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* Storyboard Header */}
-          <div className="flex items-center justify-between bg-[#FAF8F5] border border-[#E5DEC9] rounded-2xl px-4 py-2.5">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#6E675F]">
-              Aperçu Storyboard ({project.slides.length} slides)
-            </span>
-
-            <button
-              onClick={handleAddSlide}
-              className="text-xs px-3 py-1.5 rounded-lg bg-[#181512] text-white font-medium flex items-center gap-1.5 hover:opacity-90 transition"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Ajouter une slide</span>
-            </button>
-          </div>
-
-          {/* Horizontal Scrollable Storyboard of All Slides */}
-          <div className="bg-[#FAF8F5] border border-[#E5DEC9] rounded-2xl p-5 overflow-x-auto">
-            <div className="flex items-start gap-5 min-w-max pb-2">
-              {project.slides.map((s, idx) => {
-                const isSelected = idx === activeSlideIndex;
-                return (
-                  <div
-                    key={s.id}
-                    onClick={() => setActiveSlideIndex(idx)}
-                    className={`group flex flex-col items-center cursor-pointer transition-all ${
-                      isSelected
-                        ? 'scale-[1.01]'
-                        : 'opacity-85 hover:opacity-100'
-                    }`}
-                  >
-                    <div
-                      className={`p-2 rounded-2xl transition-all ${
-                        isSelected
-                          ? 'ring-2 ring-[#181512] bg-white shadow-md'
-                          : 'hover:bg-white/60'
-                      }`}
-                    >
-                      <SlideCanvas
-                        slide={s}
-                        slideIndex={idx}
-                        totalSlides={project.slides.length}
-                        project={project}
-                        format={currentFormat}
-                        theme={baseTheme}
-                        fontPairing={currentFonts}
-                        scale={cardScale}
-                      />
-                    </div>
-
-                    <div className="mt-2 flex items-center justify-between w-full px-2">
-                      <span
-                        className={`text-xs font-semibold ${
-                          isSelected ? 'text-[#181512]' : 'text-[#6E675F]'
-                        }`}
-                      >
-                        Slide {idx + 1}
-                      </span>
-                      {project.slides.length > 2 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteSlide(idx);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 text-[#8E867B] hover:text-red-600 p-1 transition"
-                          title="Supprimer cette slide"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Caption & Hashtags Box */}
-          <div className="bg-[#FAF8F5] border border-[#E5DEC9] rounded-2xl p-4 flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#6E675F]">
-                Légende TikTok & Instagram prête à publier
-              </span>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-[11px] text-[#8B8174]">Idées :</span>
+            {QUICK_IDEAS.map((idea) => (
               <button
-                onClick={handleCopyCaption}
-                className="text-xs px-3 py-1 rounded-lg bg-[#EFECE4] hover:bg-[#E4DFD3] text-[#181512] font-medium flex items-center gap-1.5 transition"
+                key={idea}
+                type="button"
+                onClick={() => void runAIGeneration(idea)}
+                disabled={isGenerating}
+                className="rounded-full border border-[#E8E2D8] bg-[#F6F3ED] px-3 py-1.5 text-[11px] font-medium text-[#5F584F] transition hover:border-[#C9BFB1] hover:bg-white disabled:opacity-50"
               >
-                {copiedCaption ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-green-700" />
-                    <span>Copié !</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copier la légende</span>
-                  </>
-                )}
+                {idea}
               </button>
-            </div>
-            <p className="text-xs text-[#4A443E] whitespace-pre-line leading-relaxed line-clamp-3">
-              {project.caption}
-            </p>
+            ))}
           </div>
-        </div>
+        </section>
 
-        {/* RIGHT COLUMN (5/12): 4 SIMPLE TABS */}
-        <div className="lg:col-span-5 bg-[#FAF8F5] border border-[#E5DEC9] rounded-2xl flex flex-col overflow-hidden">
-          {/* Tab Switcher */}
-          <div className="grid grid-cols-4 border-b border-[#E5DEC9] bg-[#EFECE4]/60 p-1.5 gap-1">
-            <button
-              onClick={() => setRightTab('designs')}
-              className={`py-2.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
-                rightTab === 'designs'
-                  ? 'bg-white text-[#181512] shadow-sm'
-                  : 'text-[#6E675F] hover:text-[#181512]'
-              }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Designs & Couleurs</span>
-            </button>
-
-            <button
-              onClick={() => setRightTab('fonts')}
-              className={`py-2.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
-                rightTab === 'fonts'
-                  ? 'bg-white text-[#181512] shadow-sm'
-                  : 'text-[#6E675F] hover:text-[#181512]'
-              }`}
-            >
-              <Type className="w-3.5 h-3.5" />
-              <span>15 Polices</span>
-            </button>
-
-            <button
-              onClick={() => setRightTab('illustrations')}
-              className={`py-2.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
-                rightTab === 'illustrations'
-                  ? 'bg-white text-[#181512] shadow-sm'
-                  : 'text-[#6E675F] hover:text-[#181512]'
-              }`}
-            >
-              <ImageIcon className="w-3.5 h-3.5" />
-              <span>48 Illustr.</span>
-            </button>
-
-            <button
-              onClick={() => setRightTab('slide')}
-              className={`py-2.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
-                rightTab === 'slide'
-                  ? 'bg-white text-[#181512] shadow-sm'
-                  : 'text-[#6E675F] hover:text-[#181512]'
-              }`}
-            >
-              <Palette className="w-3.5 h-3.5" />
-              <span>Texte Slide {activeSlideIndex + 1}</span>
-            </button>
-          </div>
-
-          {/* TAB 1: 22 DESIGNS DE CARROUSEL & TOUTES LES COULEURS */}
-          {rightTab === 'designs' && (
-            <div className="p-5 flex flex-col gap-5 overflow-y-auto max-h-[780px]">
-              {/* Custom Color Controls at the very top of the tab */}
-              <div className="p-4 rounded-2xl bg-white border border-[#E5DEC9] flex flex-col gap-3.5 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#181512]">
-                    🎨 Personnaliser les Couleurs du Style Actif
-                  </span>
-                  {(project.customAccentColor || project.customBgColor) && (
-                    <button
-                      onClick={() =>
-                        updateProject({
-                          customAccentColor: undefined,
-                          customBgColor: undefined,
-                        })
-                      }
-                      className="text-[11px] text-[#6E675F] hover:text-[#181512] flex items-center gap-1 underline"
-                    >
-                      <RotateCcw className="w-3 h-3" />
-                      <span>Réinitialiser</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Couleur Principale / Accent */}
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.9fr)]">
+          <section className="min-w-0 space-y-4">
+            <div className="overflow-hidden rounded-[26px] border border-[#E6DFD4] bg-[#FBFAF7] shadow-[0_10px_36px_-28px_rgba(49,39,24,0.25)]">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EEE9E1] px-4 py-3.5 sm:px-5">
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] font-semibold text-[#4A443E]">
-                      Couleur Principale (Punaises, Bandeaux, Graphiques, Illustrations, Mots-clés)
-                    </span>
-                    <input
-                      type="color"
-                      value={activeAccent}
-                      onChange={(e) =>
-                        updateProject({ customAccentColor: e.target.value })
-                      }
-                      className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
-                    />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {ACCENT_SWATCHES.map((sw) => (
-                      <button
-                        key={sw.hex}
-                        onClick={() =>
-                          updateProject({ customAccentColor: sw.hex })
-                        }
-                        title={sw.name}
-                        className={`w-7 h-7 rounded-full border-2 transition-transform ${
-                          activeAccent.toLowerCase() === sw.hex.toLowerCase()
-                            ? 'scale-110 border-[#181512] ring-2 ring-[#181512]/20'
-                            : 'border-white shadow-sm'
-                        }`}
-                        style={{ backgroundColor: sw.hex }}
-                      />
-                    ))}
-                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8B8174]">Aperçu du carrousel</p>
+                  <p className="mt-0.5 text-sm font-semibold">Slide {activeSlideIndex + 1} <span className="font-normal text-[#8B8174]">sur {project.slides.length}</span></p>
                 </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveSlideIndex((index) => Math.max(0, index - 1))}
+                    disabled={activeSlideIndex === 0}
+                    aria-label="Slide précédente"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E6DFD4] bg-white text-[#5F584F] transition hover:bg-[#F6F3ED] disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSlideIndex((index) => Math.min(project.slides.length - 1, index + 1))}
+                    disabled={activeSlideIndex === project.slides.length - 1}
+                    aria-label="Slide suivante"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#E6DFD4] bg-white text-[#5F584F] transition hover:bg-[#F6F3ED] disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleDownloadCurrent()}
+                    disabled={isExporting}
+                    className="ml-1 inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#E6DFD4] bg-white px-3 text-xs font-semibold transition hover:bg-[#F6F3ED] disabled:opacity-50"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    PNG
+                  </button>
+                </div>
+              </div>
 
-                {/* Couleur de Fond */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] font-semibold text-[#4A443E]">
-                      Couleur de Fond (Clair, Crème, Pastel ou Sombre)
-                    </span>
-                    <div className="flex items-center gap-2">
+              <div className="flex min-h-[390px] items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_at_center,_#ffffff_0%,_#f5f1e9_76%)] px-3 py-6 sm:min-h-[540px] sm:py-8">
+                {currentSlide ? (
+                  <SlideCanvas
+                    slide={currentSlide}
+                    slideIndex={activeSlideIndex}
+                    totalSlides={project.slides.length}
+                    project={project}
+                    format={format}
+                    theme={theme}
+                    fontPairing={fontPairing}
+                    scale={previewScale}
+                  />
+                ) : (
+                  <div className="text-sm text-[#81766A]">Ajoute une slide pour commencer.</div>
+                )}
+              </div>
+
+              <div className="border-t border-[#EEE9E1] px-4 py-4 sm:px-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold text-[#655E55]">Tes slides</p>
+                  <button
+                    type="button"
+                    onClick={handleAddSlide}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition hover:bg-[#F1ECE3]"
+                    style={{ color: activeAccent }}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Ajouter une slide
+                  </button>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                  {project.slides.map((slide, index) => (
+                    <div key={slide.id} className="group relative shrink-0">
                       <button
-                        onClick={() =>
-                          updateProject({ customBgColor: undefined })
-                        }
-                        className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                          !project.customBgColor
-                            ? 'bg-[#181512] text-white border-[#181512]'
-                            : 'bg-[#F5F2EB] text-[#6E675F] border-[#DCD4C4]'
+                        type="button"
+                        onClick={() => setActiveSlideIndex(index)}
+                        aria-label={`Afficher la slide ${index + 1}`}
+                        className={`rounded-[15px] p-1.5 transition ${
+                          index === activeSlideIndex
+                            ? 'bg-white ring-2 ring-[#29251F] shadow-sm'
+                            : 'bg-transparent hover:bg-white/70'
                         }`}
                       >
-                        Alternance Auto du Style
+                        <SlideCanvas
+                          slide={slide}
+                          slideIndex={index}
+                          totalSlides={project.slides.length}
+                          project={project}
+                          format={format}
+                          theme={theme}
+                          fontPairing={fontPairing}
+                          scale={thumbnailScale}
+                        />
                       </button>
-                      <input
-                        type="color"
-                        value={activeBg}
-                        onChange={(e) =>
-                          updateProject({ customBgColor: e.target.value })
-                        }
-                        className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {BG_SWATCHES.map((sw) => (
-                      <button
-                        key={sw.hex}
-                        onClick={() => updateProject({ customBgColor: sw.hex })}
-                        title={sw.name}
-                        className={`w-7 h-7 rounded-full border-2 transition-transform ${
-                          project.customBgColor?.toLowerCase() ===
-                          sw.hex.toLowerCase()
-                            ? 'scale-110 border-[#181512] ring-2 ring-[#181512]/20'
-                            : 'border-[#DCD4C4] shadow-sm'
-                        }`}
-                        style={{ backgroundColor: sw.hex }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* 14 Complete Palettes */}
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#181512] mb-2">
-                  14 Palettes Complètes (Claires & Sombres — 1 clic)
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {EDITORIAL_THEMES.map((th) => {
-                    const active =
-                      project.themeId === th.id &&
-                      !project.customAccentColor &&
-                      !project.customBgColor;
-                    return (
-                      <button
-                        key={th.id}
-                        onClick={() =>
-                          updateProject({
-                            themeId: th.id as EditorialThemeId,
-                            customAccentColor: th.accent,
-                            customBgColor: undefined,
-                          })
-                        }
-                        className={`flex items-center gap-2.5 p-2 rounded-xl border text-left transition ${
-                          active
-                            ? 'bg-white border-[#181512] ring-1 ring-[#181512] shadow-sm'
-                            : 'bg-white/60 border-[#E5DEC9] hover:bg-white'
-                        }`}
-                      >
-                        <div
-                          className="w-7 h-7 rounded-lg border border-black/15 flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: th.bgPrimary }}
-                        >
-                          <span
-                            className="w-3.5 h-3.5 rounded-full"
-                            style={{ backgroundColor: th.accent }}
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-xs font-semibold text-[#181512] truncate">
-                            {th.name}
-                          </div>
-                          <div className="text-[10px] text-[#6E675F] truncate">
-                            {th.subtitle}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 22 Visual Styles */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-[#181512]">
-                    22 Designs de Carrousel (Tous recolorables)
-                  </label>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {VISUAL_STYLES.map((st) => {
-                    const active = activeVisualStyle === st.id;
-                    return (
-                      <button
-                        key={st.id}
-                        onClick={() => updateProject({ visualStyle: st.id })}
-                        className={`p-3 rounded-xl border text-left transition-all ${
-                          active
-                            ? 'bg-white border-[#181512] ring-2 ring-[#181512] shadow-sm'
-                            : 'bg-white/60 border-[#E5DEC9] hover:bg-white'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs font-semibold text-[#181512] truncate">
-                            {st.name}
-                          </span>
-                          {st.badge && (
-                            <span
-                              className="text-[9px] font-bold px-1.5 py-0.5 rounded text-white shrink-0"
-                              style={{ backgroundColor: activeAccent }}
-                            >
-                              {st.badge}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-[#6E675F] line-clamp-2 mt-1">
-                          {st.description}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: 15 POLICES D'ÉCRITURE */}
-          {rightTab === 'fonts' && (
-            <div className="p-5 flex flex-col gap-3 overflow-y-auto max-h-[780px]">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#181512]">
-                  15 Duos de Polices (Agence, Impact & Éditorial)
-                </label>
-                <span className="text-[11px] text-[#6E675F]">
-                  Appliqué à toutes les slides
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 gap-2.5">
-                {FONT_PAIRINGS.map((fp) => {
-                  const active = project.fontPairingId === fp.id;
-                  return (
-                    <button
-                      key={fp.id}
-                      onClick={() =>
-                        updateProject({ fontPairingId: fp.id as FontPairingId })
-                      }
-                      className={`p-3.5 rounded-xl border text-left transition-all flex items-center justify-between gap-3 ${
-                        active
-                          ? 'bg-white border-[#181512] ring-1 ring-[#181512] shadow-sm'
-                          : 'bg-white/60 border-[#E5DEC9] hover:bg-white'
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-[#181512]">
-                            {fp.name}
-                          </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#EFECE4] text-[#6E675F]">
-                            {fp.vibe}
-                          </span>
-                        </div>
-                        <div
-                          className="text-xl text-[#181512] mt-1 truncate"
-                          style={{
-                            fontFamily: fp.headingFamily,
-                            fontWeight: fp.headingWeight,
-                          }}
-                        >
-                          L’art du carrousel{' '}
-                          <span className="italic" style={{ color: activeAccent }}>
-                            viral & créatif
-                          </span>
-                        </div>
+                      <div className="mt-1 flex items-center justify-between px-1">
+                        <span className="text-[10px] font-semibold text-[#736B61]">{String(index + 1).padStart(2, '0')}</span>
+                        {project.slides.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSlide(index)}
+                            aria-label={`Supprimer la slide ${index + 1}`}
+                            className="rounded p-0.5 text-[#9A9185] opacity-0 transition hover:text-red-600 group-hover:opacity-100 focus:opacity-100"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
                       </div>
-
-                      {active && (
-                        <div
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-white shrink-0"
-                          style={{ backgroundColor: activeAccent }}
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          )}
 
-          {/* TAB 3: 48 ILLUSTRATIONS RECOLORABLES */}
-          {rightTab === 'illustrations' && (
-            <div className="p-5 flex flex-col gap-3.5 overflow-y-auto max-h-[780px]">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#181512]">
-                  48 Illustrations Vectorielles (Slide {activeSlideIndex + 1})
-                </label>
+            <section className="rounded-[22px] border border-[#E6DFD4] bg-[#FBFAF7] p-4 sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8B8174]">Prêt à publier</p>
+                  <h3 className="mt-1 text-sm font-semibold">Légende TikTok & Instagram</h3>
+                </div>
                 <button
-                  onClick={() => updateActiveSlide({ illustrationId: 'none' })}
-                  className="text-[11px] text-[#6E675F] hover:text-[#181512] underline"
+                  type="button"
+                  onClick={() => void handleCopyCaption()}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#E6DFD4] bg-white px-3 py-2 text-xs font-semibold transition hover:bg-[#F6F3ED]"
                 >
-                  Retirer l’illustration
+                  {captionCopied ? <Check className="h-3.5 w-3.5 text-emerald-700" /> : <Copy className="h-3.5 w-3.5" />}
+                  {captionCopied ? 'Copié' : 'Copier'}
                 </button>
               </div>
+              <p className="mt-3 line-clamp-3 whitespace-pre-line text-xs leading-relaxed text-[#625B52]">{project.caption}</p>
+              {project.hashtags.length > 0 && (
+                <p className="mt-2 line-clamp-1 text-[11px] text-[#8B8174]">{project.hashtags.join(' ')}</p>
+              )}
+            </section>
+          </section>
 
-              <input
-                type="text"
-                value={illSearch}
-                onChange={(e) => setIllSearch(e.target.value)}
-                placeholder="Rechercher parmi les 48 illustrations (ex: cerveau, fusée, sablier, diamant...)"
-                className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCD4C4] text-xs text-[#181512]"
-              />
-
-              <div className="flex flex-wrap gap-1.5">
-                {CATEGORIES.map((cat) => (
+          <aside className="overflow-hidden rounded-[26px] border border-[#E6DFD4] bg-[#FBFAF7] shadow-[0_10px_36px_-28px_rgba(49,39,24,0.25)] xl:sticky xl:top-[88px]">
+            <div className="border-b border-[#EEE9E1] px-4 pb-3 pt-4 sm:px-5">
+              <p className="text-sm font-semibold">Personnaliser</p>
+              <p className="mt-0.5 text-xs text-[#81766A]">Modifie seulement ce dont tu as besoin.</p>
+              <div className="mt-4 grid grid-cols-3 gap-1 rounded-xl bg-[#F1ECE3] p-1">
+                {tabs.map((tab) => (
                   <button
-                    key={cat}
-                    onClick={() => setIllCategory(cat)}
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition ${
-                      illCategory === cat
-                        ? 'bg-[#181512] text-white'
-                        : 'bg-[#EFECE4] text-[#6E675F] hover:text-[#181512]'
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-semibold transition sm:text-xs ${
+                      activeTab === tab.id
+                        ? 'bg-white text-[#29251F] shadow-sm'
+                        : 'text-[#82796E] hover:text-[#39342E]'
                     }`}
                   >
-                    {cat}
+                    {tab.icon}
+                    <span>{tab.label}</span>
                   </button>
                 ))}
               </div>
+            </div>
 
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 pt-1">
-                {filteredIllustrations.map((item) => {
-                  const selected = currentSlide.illustrationId === item.id;
-                  const svgPreview = getIllustrationSvg(
-                    item.id,
-                    '#181512',
-                    activeAccent,
-                    'rgba(0,0,0,0.06)'
-                  );
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() =>
-                        updateActiveSlide({ illustrationId: item.id })
-                      }
-                      className={`p-2 rounded-xl border flex flex-col items-center gap-1.5 transition ${
-                        selected
-                          ? 'bg-white border-[#181512] ring-2 ring-[#181512] shadow-sm'
-                          : 'bg-white/70 border-[#E5DEC9] hover:bg-white'
-                      }`}
+            <div className="max-h-[calc(100vh-190px)] min-h-[350px] overflow-y-auto p-4 sm:p-5">
+              {activeTab === 'design' && (
+                <div className="space-y-5">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold">Style du carrousel</label>
+                    <select
+                      value={visualStyle}
+                      onChange={(event) => updateProject({ visualStyle: event.target.value as VisualStyleId })}
+                      className="h-11 w-full rounded-xl border border-[#E3DDD2] bg-white px-3 text-xs font-medium outline-none focus:border-[#81766A]"
                     >
-                      <div
-                        className="w-14 h-14"
-                        dangerouslySetInnerHTML={{ __html: svgPreview }}
+                      {VISUAL_STYLES.map((item) => (
+                        <option key={item.id} value={item.id}>{item.name}</option>
+                      ))}
+                    </select>
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-[#81766A]">{styleInfo.description}</p>
+                  </div>
+
+                  <div className="border-t border-[#EEE9E1] pt-4">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-xs font-semibold">Couleurs du design</p>
+                        <p className="mt-0.5 text-[11px] text-[#81766A]">Toutes les couleurs sont modifiables.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleResetColors}
+                        className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#81766A] transition hover:text-[#29251F]"
+                        title="Réinitialiser les couleurs"
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        Réinitialiser
+                      </button>
+                    </div>
+
+                    <div className="space-y-3 rounded-2xl border border-[#EEE9E1] bg-white p-3.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] font-semibold">Couleur principale</p>
+                          <p className="text-[10px] text-[#8B8174]">Accents, mots-clés, illustrations</p>
+                        </div>
+                        <label className="flex h-9 items-center gap-2 rounded-lg border border-[#E8E2D8] px-2">
+                          <input
+                            type="color"
+                            value={activeAccent}
+                            onChange={(event) => updateProject({ customAccentColor: event.target.value })}
+                            aria-label="Choisir la couleur principale"
+                            className="h-6 w-6 cursor-pointer border-0 bg-transparent p-0"
+                          />
+                          <span className="font-mono text-[10px] uppercase text-[#6D665D]">{activeAccent}</span>
+                        </label>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {ACCENT_SWATCHES.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => updateProject({ customAccentColor: color })}
+                            aria-label={`Accent ${color}`}
+                            title={color}
+                            className={`h-6 w-6 rounded-full border-2 transition hover:scale-110 ${activeAccent.toLowerCase() === color.toLowerCase() ? 'border-[#211E1A] ring-2 ring-[#211E1A]/10' : 'border-white shadow-sm'}`}
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+
+                      <div className="border-t border-[#F0ECE6] pt-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-[11px] font-semibold">Couleur du fond</p>
+                            <p className="text-[10px] text-[#8B8174]">Auto ou couleur personnalisée</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => updateProject({ customBgColor: undefined })}
+                              className={`rounded-lg border px-2 py-1.5 text-[10px] font-semibold transition ${!project.customBgColor ? 'border-[#29251F] bg-[#29251F] text-white' : 'border-[#E8E2D8] bg-white text-[#6D665D] hover:bg-[#F6F3ED]'}`}
+                            >
+                              Auto
+                            </button>
+                            <label className="flex h-9 items-center rounded-lg border border-[#E8E2D8] px-2">
+                              <input
+                                type="color"
+                                value={activeBackground}
+                                onChange={(event) => updateProject({ customBgColor: event.target.value })}
+                                aria-label="Choisir la couleur de fond"
+                                className="h-6 w-6 cursor-pointer border-0 bg-transparent p-0"
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[#EEE9E1] pt-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold">Palettes prêtes à l’emploi</p>
+                        <p className="mt-0.5 text-[11px] text-[#81766A]">14 ambiances, un clic</p>
+                      </div>
+                      <LayoutGrid className="h-4 w-4 text-[#A19688]" />
+                    </div>
+                    <div className="grid grid-cols-7 gap-2">
+                      {EDITORIAL_THEMES.map((item) => {
+                        const selected =
+                          project.themeId === item.id &&
+                          activeAccent.toLowerCase() === item.accent.toLowerCase() &&
+                          !project.customBgColor;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handlePaletteSelect(item.id as EditorialThemeId, item.accent)}
+                            title={`${item.name} — ${item.subtitle}`}
+                            aria-label={`Palette ${item.name}`}
+                            className={`relative flex h-9 items-center justify-center rounded-lg border transition hover:-translate-y-0.5 ${selected ? 'border-[#29251F] ring-2 ring-[#29251F]/15' : 'border-[#E7E1D8]'}`}
+                            style={{ backgroundColor: item.bgPrimary }}
+                          >
+                            <span className="h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: item.accent }} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[#EEE9E1] pt-4">
+                    <label className="mb-1.5 block text-xs font-semibold">Police d’écriture</label>
+                    <select
+                      value={project.fontPairingId}
+                      onChange={(event) => updateProject({ fontPairingId: event.target.value as FontPairingId })}
+                      className="h-11 w-full rounded-xl border border-[#E3DDD2] bg-white px-3 text-xs outline-none focus:border-[#81766A]"
+                    >
+                      {FONT_PAIRINGS.map((item) => (
+                        <option key={item.id} value={item.id}>{item.name} · {item.vibe}</option>
+                      ))}
+                    </select>
+                    <p className="mt-1.5 text-[11px] text-[#81766A]">Aperçu : <span style={{ fontFamily: fontPairing.headingFamily }} className="font-semibold text-[#29251F]">Un titre qui accroche</span></p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'content' && currentSlide && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold">Mise en page de la slide</label>
+                    <select
+                      value={currentSlide.layout}
+                      onChange={(event) => updateActiveSlide({ layout: event.target.value as SlideLayoutType })}
+                      className="h-11 w-full rounded-xl border border-[#E3DDD2] bg-white px-3 text-xs outline-none focus:border-[#81766A]"
+                    >
+                      <option value="cover-editorial">Couverture</option>
+                      <option value="numbered-insight">Idée clé</option>
+                      <option value="big-stat">Chiffre clé</option>
+                      <option value="comparison-split">Comparaison</option>
+                      <option value="quote-manifesto">Citation</option>
+                      <option value="checklist-card">Checklist</option>
+                      <option value="cta-outro">Conclusion</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold">Petit titre</label>
+                    <input
+                      value={currentSlide.kicker || ''}
+                      onChange={(event) => updateActiveSlide({ kicker: event.target.value })}
+                      placeholder="Ex. 01 — LE DÉCLIC"
+                      className="h-10 w-full rounded-xl border border-[#E3DDD2] bg-white px-3 text-xs outline-none focus:border-[#81766A]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold">Titre principal</label>
+                    <textarea
+                      rows={4}
+                      value={currentSlide.title}
+                      onChange={(event) => updateActiveSlide({ title: event.target.value })}
+                      className="w-full resize-y rounded-xl border border-[#E3DDD2] bg-white px-3 py-2.5 text-xs leading-relaxed outline-none focus:border-[#81766A]"
+                    />
+                    <p className="mt-1 text-[10px] text-[#8B8174]">Entoure un mot d’astérisques pour le mettre en valeur : *mot*</p>
+                  </div>
+
+                  {currentSlide.layout === 'big-stat' && (
+                    <div className="space-y-3 rounded-xl bg-[#F5F1E9] p-3">
+                      <div>
+                        <label className="mb-1 block text-[11px] font-semibold">Chiffre clé</label>
+                        <input
+                          value={currentSlide.statValue || ''}
+                          onChange={(event) => updateActiveSlide({ statValue: event.target.value })}
+                          className="h-10 w-full rounded-lg border border-[#E3DDD2] bg-white px-3 text-xs outline-none focus:border-[#81766A]"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] font-semibold">Explication</label>
+                        <textarea
+                          rows={2}
+                          value={currentSlide.statLabel || ''}
+                          onChange={(event) => updateActiveSlide({ statLabel: event.target.value })}
+                          className="w-full rounded-lg border border-[#E3DDD2] bg-white px-3 py-2 text-xs outline-none focus:border-[#81766A]"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {currentSlide.layout === 'comparison-split' ? (
+                    <div className="space-y-3 rounded-xl bg-[#F5F1E9] p-3">
+                      <div>
+                        <label className="mb-1 block text-[11px] font-semibold">À éviter</label>
+                        <textarea
+                          rows={3}
+                          value={currentSlide.comparisonLeftText || ''}
+                          onChange={(event) => updateActiveSlide({ comparisonLeftText: event.target.value })}
+                          className="w-full rounded-lg border border-[#E3DDD2] bg-white px-3 py-2 text-xs outline-none focus:border-[#81766A]"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[11px] font-semibold">À adopter</label>
+                        <textarea
+                          rows={3}
+                          value={currentSlide.comparisonRightText || ''}
+                          onChange={(event) => updateActiveSlide({ comparisonRightText: event.target.value })}
+                          className="w-full rounded-lg border border-[#E3DDD2] bg-white px-3 py-2 text-xs outline-none focus:border-[#81766A]"
+                        />
+                      </div>
+                    </div>
+                  ) : currentSlide.layout === 'checklist-card' ? (
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold">Checklist (une ligne par point)</label>
+                      <textarea
+                        rows={5}
+                        value={(currentSlide.bulletPoints || []).join('\n')}
+                        onChange={(event) => updateActiveSlide({ bulletPoints: event.target.value.split('\n') })}
+                        className="w-full rounded-xl border border-[#E3DDD2] bg-white px-3 py-2.5 text-xs leading-relaxed outline-none focus:border-[#81766A]"
                       />
-                      <span className="text-[10px] font-medium text-[#181512] text-center line-clamp-1">
-                        {item.name}
-                      </span>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="mb-1.5 block text-xs font-semibold">Phrase d’explication</label>
+                      <textarea
+                        rows={3}
+                        value={currentSlide.subtitle || ''}
+                        onChange={(event) => updateActiveSlide({ subtitle: event.target.value })}
+                        className="w-full rounded-xl border border-[#E3DDD2] bg-white px-3 py-2.5 text-xs leading-relaxed outline-none focus:border-[#81766A]"
+                      />
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3 border-t border-[#EEE9E1] pt-4">
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-semibold">Signature</label>
+                      <input
+                        value={project.authorHandle}
+                        onChange={(event) => updateProject({ authorHandle: event.target.value })}
+                        className="h-10 w-full rounded-xl border border-[#E3DDD2] bg-white px-3 text-xs outline-none focus:border-[#81766A]"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-semibold">Invite à swiper</label>
+                      <input
+                        value={currentSlide.swipePrompt || ''}
+                        onChange={(event) => updateActiveSlide({ swipePrompt: event.target.value })}
+                        className="h-10 w-full rounded-xl border border-[#E3DDD2] bg-white px-3 text-xs outline-none focus:border-[#81766A]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'illustrations' && currentSlide && (
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold">Illustration de la slide {activeSlideIndex + 1}</p>
+                      <p className="mt-1 text-[11px] text-[#81766A]">Couleurs synchronisées avec ton design.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAutoIllustrations}
+                      title="Choisir automatiquement une illustration adaptée à chaque slide"
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-semibold transition hover:bg-[#F1ECE3]"
+                      style={{ color: activeAccent }}
+                    >
+                      <Wand2 className="h-3.5 w-3.5" />
+                      Auto
                     </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: ÉDITION DIRECTE DU TEXTE DE LA SLIDE ACTIVE */}
-          {rightTab === 'slide' && (
-            <div className="p-5 flex flex-col gap-4 overflow-y-auto max-h-[780px]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#181512]">
-                  Modifier la Slide {activeSlideIndex + 1} /{' '}
-                  {project.slides.length}
-                </span>
-                <select
-                  value={currentSlide.layout}
-                  onChange={(e) =>
-                    updateActiveSlide({
-                      layout: e.target.value as SlideLayoutType,
-                    })
-                  }
-                  className="px-2.5 py-1.5 rounded-lg bg-white border border-[#DCD4C4] text-xs font-medium"
-                >
-                  <option value="cover-editorial">Couverture Éditoriale</option>
-                  <option value="numbered-insight">Idée Clé Illustrée</option>
-                  <option value="big-stat">Chiffre Choc (Stat / Graphique)</option>
-                  <option value="comparison-split">Comparatif Avant / Après</option>
-                  <option value="checklist-card">Checklist / Fiche Mémo</option>
-                  <option value="cta-outro">Conclusion & Citation</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-[#6E675F] mb-1">
-                  Sur-titre (Kicker)
-                </label>
-                <input
-                  type="text"
-                  value={currentSlide.kicker || ''}
-                  onChange={(e) =>
-                    updateActiveSlide({ kicker: e.target.value })
-                  }
-                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCD4C4] text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-[#6E675F] mb-1">
-                  Titre principal (entoure un mot d’étoiles *comme ceci* pour le surligner)
-                </label>
-                <textarea
-                  rows={3}
-                  value={currentSlide.title}
-                  onChange={(e) => updateActiveSlide({ title: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCD4C4] text-xs leading-relaxed"
-                />
-              </div>
-
-              {currentSlide.layout === 'big-stat' && (
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#6E675F] mb-1">
-                      Chiffre clé
-                    </label>
-                    <input
-                      type="text"
-                      value={currentSlide.statValue || ''}
-                      onChange={(e) =>
-                        updateActiveSlide({ statValue: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCD4C4] text-xs font-bold"
-                    />
                   </div>
-                  <div className="col-span-2">
-                    <label className="block text-[11px] font-semibold text-[#6E675F] mb-1">
-                      Explication du chiffre
+
+                  <div className="flex gap-2">
+                    <label className="relative min-w-0 flex-1">
+                      <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9A9185]" />
+                      <input
+                        value={illustrationSearch}
+                        onChange={(event) => setIllustrationSearch(event.target.value)}
+                        placeholder="Rechercher une illustration…"
+                        className="h-10 w-full rounded-xl border border-[#E3DDD2] bg-white pl-9 pr-3 text-xs outline-none focus:border-[#81766A]"
+                      />
                     </label>
-                    <input
-                      type="text"
-                      value={currentSlide.statLabel || ''}
-                      onChange={(e) =>
-                        updateActiveSlide({ statLabel: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCD4C4] text-xs"
-                    />
+                    <select
+                      value={illustrationCategory}
+                      onChange={(event) => setIllustrationCategory(event.target.value)}
+                      className="h-10 max-w-[150px] rounded-xl border border-[#E3DDD2] bg-white px-2 text-[10px] outline-none focus:border-[#81766A]"
+                    >
+                      {ILLUSTRATION_CATEGORIES.map((category) => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
                   </div>
+
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {filteredIllustrations.map((item) => {
+                      const selected = currentSlide.illustrationId === item.id;
+                      const previewSvg = getIllustrationSvg(
+                        item.id,
+                        theme.ink,
+                        activeAccent,
+                        theme.accentSoft
+                      );
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => updateActiveSlide({ illustrationId: item.id })}
+                          title={`${item.label} · ${item.category}`}
+                          className={`rounded-xl border p-2 text-left transition hover:-translate-y-0.5 hover:bg-white ${selected ? 'border-[#29251F] bg-white ring-2 ring-[#29251F]/10' : 'border-[#EEE9E1] bg-[#F8F6F1]'}`}
+                        >
+                          <div className="mx-auto aspect-[1.35] w-full max-w-[90px]" dangerouslySetInnerHTML={{ __html: previewSvg }} />
+                          <span className="mt-1 block truncate text-center text-[9px] font-medium text-[#5F584F]">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => updateActiveSlide({ illustrationId: 'none' })}
+                    className="w-full rounded-xl border border-dashed border-[#D9D1C5] px-3 py-2 text-xs font-medium text-[#81766A] transition hover:border-[#AFA79B] hover:bg-white"
+                  >
+                    Retirer l’illustration de cette slide
+                  </button>
                 </div>
               )}
-
-              {currentSlide.layout === 'comparison-split' ? (
-                <div className="flex flex-col gap-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#6E675F] mb-1">
-                      ✕ Erreur / Ancienne méthode
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={currentSlide.comparisonLeftText || ''}
-                      onChange={(e) =>
-                        updateActiveSlide({
-                          comparisonLeftText: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCD4C4] text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-[#6E675F] mb-1">
-                      ✓ Réalité / Nouvelle méthode
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={currentSlide.comparisonRightText || ''}
-                      onChange={(e) =>
-                        updateActiveSlide({
-                          comparisonRightText: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCD4C4] text-xs"
-                    />
-                  </div>
-                </div>
-              ) : currentSlide.layout === 'checklist-card' ? (
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#6E675F] mb-1">
-                    Points de la checklist (1 par ligne)
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={(currentSlide.bulletPoints || []).join('\n')}
-                    onChange={(e) =>
-                      updateActiveSlide({
-                        bulletPoints: e.target.value.split('\n'),
-                      })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCD4C4] text-xs leading-relaxed"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#6E675F] mb-1">
-                    Sous-titre / Phrase d’explication
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={currentSlide.subtitle || ''}
-                    onChange={(e) =>
-                      updateActiveSlide({ subtitle: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCD4C4] text-xs leading-relaxed"
-                  />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E5DEC9]">
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#6E675F] mb-1">
-                    Signature (@handle)
-                  </label>
-                  <input
-                    type="text"
-                    value={project.authorHandle}
-                    onChange={(e) =>
-                      updateProject({ authorHandle: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCD4C4] text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-semibold text-[#6E675F] mb-1">
-                    Texte d’incitation au swipe
-                  </label>
-                  <input
-                    type="text"
-                    value={currentSlide.swipePrompt || ''}
-                    onChange={(e) =>
-                      updateActiveSlide({ swipePrompt: e.target.value })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#DCD4C4] text-xs"
-                  />
-                </div>
-              </div>
             </div>
-          )}
+          </aside>
         </div>
+
+        <footer className="pb-2 text-center text-[10px] text-[#978E83]">
+          Créé pour des carrousels TikTok Photo Mode & Instagram · Images haute résolution prêtes à exporter
+        </footer>
       </main>
     </div>
   );
 }
+
 export default App;
