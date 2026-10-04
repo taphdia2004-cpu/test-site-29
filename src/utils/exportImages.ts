@@ -1,4 +1,8 @@
 import JSZip from 'jszip';
+import { toCanvas } from 'html-to-image';
+import { createElement } from 'react';
+import { flushSync } from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import {
   CarouselProject,
   EditorialTheme,
@@ -8,7 +12,7 @@ import {
 } from '../types/carousel';
 import { getIllustrationDataUri } from '../data/illustrationsLibrary';
 import { FONT_PAIRINGS } from '../data/knowledgeBase';
-import { computeSlidePalette } from '../components/SlideCanvas';
+import { computeSlidePalette, SlideCanvas } from '../components/SlideCanvas';
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -20,7 +24,7 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
   });
 }
 
-export async function renderSlideToCanvas(
+async function renderSlideFallbackToCanvas(
   project: CarouselProject,
   slide: SlideItem,
   slideIndex: number,
@@ -189,7 +193,7 @@ export async function renderSlideToCanvas(
   if (slide.layout === 'big-stat') {
     ctx.font = `italic 400 116px ${fontPairing.headingFamily}`;
     ctx.fillStyle = theme.accent;
-    ctx.fillText(slide.statValue || '80%', padX, cursorY - 12);
+    ctx.fillText(slide.statValue || 'À SOURCER', padX, cursorY - 12);
     cursorY += 118;
 
     if (slide.statLabel) {
@@ -411,12 +415,79 @@ function drawRichTitle(
   return curY + lineHeight;
 }
 
-export async function downloadSingleSlidePng(
+export async function renderSlideToCanvas(
+  project: CarouselProject,
+  slide: SlideItem,
+  slideIndex: number,
+  totalSlides: number,
+  baseTheme: EditorialTheme,
+  format: PlatformFormatSpec
+): Promise<HTMLCanvasElement> {
+  const fontPairing =
+    FONT_PAIRINGS.find((item) => item.id === project.fontPairingId) || FONT_PAIRINGS[0];
+  const stage = document.createElement('div');
+  stage.style.position = 'fixed';
+  stage.style.left = `-${format.width + 100}px`;
+  stage.style.top = '0';
+  stage.style.width = `${format.width}px`;
+  stage.style.height = `${format.height}px`;
+  stage.style.overflow = 'hidden';
+  stage.style.pointerEvents = 'none';
+  stage.style.zIndex = '-1';
+  document.body.appendChild(stage);
+
+  const root = createRoot(stage);
+  try {
+    flushSync(() => {
+      root.render(createElement(SlideCanvas, {
+        slide,
+        slideIndex,
+        totalSlides,
+        project,
+        format,
+        theme: baseTheme,
+        fontPairing,
+        scale: 1,
+      }));
+    });
+    if (document.fonts?.ready) await document.fonts.ready;
+
+    const canvasNode = stage.firstElementChild?.firstElementChild as HTMLElement | null;
+    if (!canvasNode) throw new Error('La slide à exporter est introuvable.');
+
+    return await toCanvas(canvasNode, {
+      width: format.width,
+      height: format.height,
+      canvasWidth: format.width,
+      canvasHeight: format.height,
+      pixelRatio: 1,
+      backgroundColor: project.customBgColor || baseTheme.bgPrimary,
+      cacheBust: true,
+    });
+  } catch {
+    return renderSlideFallbackToCanvas(
+      project,
+      slide,
+      slideIndex,
+      totalSlides,
+      baseTheme,
+      format
+    );
+  } finally {
+    root.unmount();
+    stage.remove();
+  }
+}
+
+export type ImageExportFormat = 'png' | 'jpg';
+
+export async function downloadSingleSlideImage(
   project: CarouselProject,
   slide: SlideItem,
   slideIndex: number,
   theme: EditorialTheme,
-  format: PlatformFormatSpec
+  format: PlatformFormatSpec,
+  imageFormat: ImageExportFormat = 'png'
 ): Promise<void> {
   const canvas = await renderSlideToCanvas(
     project,
@@ -426,21 +497,33 @@ export async function downloadSingleSlidePng(
     theme,
     format
   );
-  const dataUrl = canvas.toDataURL('image/png');
+  const mimeType = imageFormat === 'jpg' ? 'image/jpeg' : 'image/png';
+  const dataUrl = canvas.toDataURL(mimeType, imageFormat === 'jpg' ? 0.94 : undefined);
   const link = document.createElement('a');
   const num = String(slideIndex + 1).padStart(2, '0');
-  link.download = `carrousel-slide-${num}.png`;
+  link.download = `carrousel-slide-${num}.${imageFormat}`;
   link.href = dataUrl;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 }
 
+export async function downloadSingleSlidePng(
+  project: CarouselProject,
+  slide: SlideItem,
+  slideIndex: number,
+  theme: EditorialTheme,
+  format: PlatformFormatSpec
+): Promise<void> {
+  return downloadSingleSlideImage(project, slide, slideIndex, theme, format, 'png');
+}
+
 export async function downloadAllSlidesZip(
   project: CarouselProject,
   theme: EditorialTheme,
   format: PlatformFormatSpec,
-  onProgress?: (cur: number, tot: number) => void
+  onProgress?: (cur: number, tot: number) => void,
+  imageFormat: ImageExportFormat = 'png'
 ): Promise<void> {
   const zip = new JSZip();
   const folder = zip.folder('carrousel-images');
@@ -455,9 +538,10 @@ export async function downloadAllSlidesZip(
       theme,
       format
     );
-    const base64 = canvas.toDataURL('image/png').split(',')[1];
+    const mimeType = imageFormat === 'jpg' ? 'image/jpeg' : 'image/png';
+    const base64 = canvas.toDataURL(mimeType, imageFormat === 'jpg' ? 0.94 : undefined).split(',')[1];
     const num = String(i + 1).padStart(2, '0');
-    folder?.file(`slide-${num}.png`, base64, { base64: true });
+    folder?.file(`slide-${num}.${imageFormat}`, base64, { base64: true });
   }
 
   folder?.file(
@@ -468,7 +552,7 @@ export async function downloadAllSlidesZip(
   const blob = await zip.generateAsync({ type: 'blob' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  link.download = `carrousel-${project.formatId}.zip`;
+  link.download = `carrousel-${project.formatId}-${imageFormat}.zip`;
   link.href = url;
   document.body.appendChild(link);
   link.click();

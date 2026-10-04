@@ -138,6 +138,12 @@ export function computeSlidePalette(
           : '#111111'
         : userAccent;
     }
+  } else if (visualStyle === 'aurora-glass') {
+    bgPrimary = customBgColor ||
+      (isColorDark(baseBg) ? baseBg : mixWithBlack(userAccent, 0.91));
+  } else if (visualStyle === 'kinetic-type' && !customBgColor && slideIndex === totalSlides - 1) {
+    bgPrimary = isColorDark(baseBg) ? baseBg : mixWithBlack(userAccent, 0.84);
+    activeAccent = isColorDark(userAccent) ? mixWithWhite(userAccent, 0.36) : userAccent;
   }
 
   const darkBg = isColorDark(bgPrimary);
@@ -225,7 +231,8 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
   const isUppercaseHeading =
     visualStyle === 'neon-purple-agency' ||
     visualStyle === 'nexora-acid-lime' ||
-    visualStyle === 'netroots-crumpled-pills';
+    visualStyle === 'netroots-crumpled-pills' ||
+    visualStyle === 'kinetic-type';
 
   const hasIllustration =
     Boolean(slide.illustrationId) && slide.illustrationId !== 'none';
@@ -244,7 +251,9 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
     visualStyle === 'japanese-zen' ||
     visualStyle === 'luxury-monogram' ||
     visualStyle === 'shodwe-brush' ||
-    visualStyle === 'neon-purple-agency';
+    visualStyle === 'neon-purple-agency' ||
+    visualStyle === 'aurora-glass' ||
+    visualStyle === 'kinetic-type';
 
   const renderStyledHeadline = (text: string) => {
     if (!text) return null;
@@ -343,6 +352,60 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
           );
         }
 
+        if (visualStyle === 'paper-collage') {
+          return (
+            <span
+              key={idx}
+              style={{
+                backgroundColor: activeAccent,
+                color: isColorDark(activeAccent) ? '#FFFFFF' : '#171717',
+                padding: '1px 12px 4px',
+                borderRadius: '3px 10px 3px 10px',
+                display: 'inline-block',
+                lineHeight: 1.05,
+                transform: 'rotate(-1.5deg)',
+                margin: '2px 3px',
+              }}
+            >
+              {word}
+            </span>
+          );
+        }
+
+        if (visualStyle === 'kinetic-type' || visualStyle === 'aurora-glass') {
+          return (
+            <span
+              key={idx}
+              style={{
+                color: activeAccent,
+                fontStyle: 'normal',
+                fontWeight: 800,
+                textShadow: visualStyle === 'aurora-glass'
+                  ? `0 0 28px ${hexToRgba(activeAccent, 0.28)}`
+                  : 'none',
+              }}
+            >
+              {word}
+            </span>
+          );
+        }
+
+        if (visualStyle === 'dashboard-analytics' || visualStyle === 'studio-grid-system' || visualStyle === 'story-frames') {
+          return (
+            <span
+              key={idx}
+              style={{
+                color: activeAccent,
+                fontStyle: 'normal',
+                borderBottom: `3px solid ${hexToRgba(activeAccent, 0.38)}`,
+                paddingBottom: '1px',
+              }}
+            >
+              {word}
+            </span>
+          );
+        }
+
         return (
           <span
             key={idx}
@@ -364,7 +427,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
     });
   };
 
-  // Dedicated 3D Sticky Note layout for `skale-pinned-notes` — 100% recolorable!
+  // Dedicated 3D Sticky Note layout for `skale-pinned-notes`, using the selected palette.
   const renderPinnedNoteStage = () => {
     const innerPastel = mixWithWhite(userAccent, 0.88);
     const tiltDeg = slideIndex % 2 === 0 ? -2.2 : 2.1;
@@ -579,94 +642,46 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
     );
   };
 
-  // Visual Data Chart Widget for `data-charts-glass` and `grow-corporate-blue` — 100% recolorable!
-  const renderDataChartWidget = () => {
-    const pct =
-      slideIndex === 0 ? 78 : slideIndex === 1 ? 85 : slideIndex === 2 ? 64 : 92;
-    return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '24px',
-          padding: '24px 28px',
-          borderRadius: '28px',
-          backgroundColor: darkBg ? 'rgba(255,255,255,0.1)' : '#FFFFFF',
-          border: `1.5px solid ${borderCol}`,
-          boxShadow: `0 20px 45px ${hexToRgba(activeAccent, 0.1)}`,
-          marginBottom: '20px',
-        }}
-      >
-        <svg
-          width="160"
-          height="160"
-          viewBox="0 0 160 160"
-          style={{ flexShrink: 0 }}
-        >
-          <circle
-            cx="80"
-            cy="80"
-            r="60"
-            fill="none"
-            stroke={hexToRgba(activeAccent, 0.2)}
-            strokeWidth="18"
-          />
-          <circle
-            cx="80"
-            cy="80"
-            r="60"
-            fill="none"
-            stroke={activeAccent}
-            strokeWidth="18"
-            strokeDasharray={`${(pct / 100) * 377} 377`}
-            strokeLinecap="round"
-            transform="rotate(-90 80 80)"
-          />
+  // Decorative analytics placeholder; never present sample chart values as real evidence.
+  const renderDataChartWidget = () => (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        padding: '24px 28px',
+        borderRadius: '28px',
+        backgroundColor: darkBg ? 'rgba(255,255,255,0.1)' : '#FFFFFF',
+        border: `1.5px solid ${borderCol}`,
+        boxShadow: `0 20px 45px ${hexToRgba(activeAccent, 0.1)}`,
+        marginBottom: '20px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
+        <svg width="150" height="150" viewBox="0 0 150 150" style={{ flexShrink: 0 }} aria-hidden="true">
+          <circle cx="75" cy="75" r="57" fill="none" stroke={hexToRgba(activeAccent, 0.18)} strokeWidth="16" />
+          <circle cx="75" cy="75" r="37" fill={hexToRgba(activeAccent, 0.08)} />
           <text
-            x="80"
-            y="88"
+            x="75"
+            y="84"
             textAnchor="middle"
-            fill={ink}
-            style={{
-              fontFamily: fontPairing.headingFamily,
-              fontSize: '34px',
-              fontWeight: 700,
-            }}
+            fill={activeAccent}
+            style={{ fontFamily: fontPairing.headingFamily, fontSize: '30px', fontWeight: 700 }}
           >
-            {slide.statValue || `${pct}%`}
+            ···
           </text>
         </svg>
 
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-end',
-              gap: '12px',
-              height: '84px',
-            }}
-          >
-            {[45, 65, 52, 88, 100].map((h, i) => (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', height: '84px' }} aria-hidden="true">
+            {[42, 58, 48, 64, 54].map((height, index) => (
               <div
-                key={i}
+                key={index}
                 style={{
                   flex: 1,
-                  height: `${h}%`,
+                  height: `${height}%`,
                   borderRadius: '8px 8px 4px 4px',
-                  background:
-                    i === 4
-                      ? activeAccent
-                      : i === 3
-                      ? hexToRgba(activeAccent, 0.65)
-                      : hexToRgba(activeAccent, 0.28),
+                  backgroundColor: hexToRgba(activeAccent, index === 4 ? 0.72 : 0.22),
                 }}
               />
             ))}
@@ -674,20 +689,124 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
           <div
             style={{
               fontFamily: fontPairing.monoFamily,
-              fontSize: '14px',
+              fontSize: '13px',
               color: inkMuted,
               fontWeight: 600,
+              letterSpacing: '0.08em',
             }}
           >
-            PROGRESSION MESURÉE · +{pct}% D’IMPACT
+            EXEMPLE VISUEL
           </div>
         </div>
       </div>
-    );
-  };
+      <div
+        style={{
+          borderTop: `1px solid ${borderCol}`,
+          paddingTop: '10px',
+          fontFamily: fontPairing.monoFamily,
+          fontSize: '11px',
+          color: inkMuted,
+          letterSpacing: '0.06em',
+        }}
+      >
+        REMPLACE CET APERÇU PAR DES DONNÉES SOURCÉES
+      </div>
+    </div>
+  );
 
   const renderIllustrationStage = (size: number) => {
     if (!hasIllustration || !dynamicSvgRaw) return null;
+
+    if (visualStyle === 'aurora-glass') {
+      return (
+        <div
+          style={{
+            width: `${size + 56}px`,
+            height: `${size + 38}px`,
+            borderRadius: '34px',
+            border: `1px solid ${hexToRgba(activeAccent, 0.44)}`,
+            background: darkBg ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.58)',
+            backdropFilter: 'blur(18px)',
+            boxShadow: `0 24px 64px ${hexToRgba(activeAccent, 0.18)}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div style={{ width: `${size - 12}px`, height: `${size - 12}px` }} dangerouslySetInnerHTML={{ __html: dynamicSvgRaw }} />
+        </div>
+      );
+    }
+
+    if (visualStyle === 'dashboard-analytics') {
+      return (
+        <div
+          style={{
+            width: `${size + 60}px`,
+            height: `${size + 38}px`,
+            padding: '18px',
+            boxSizing: 'border-box',
+            borderRadius: '22px',
+            backgroundColor: darkBg ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+            border: `1px solid ${borderCol}`,
+            boxShadow: `0 18px 44px ${hexToRgba(ink, 0.08)}`,
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div style={{ position: 'absolute', top: '12px', left: '16px', right: '16px', display: 'flex', gap: '5px' }}>
+            {[0, 1, 2].map((dot) => <span key={dot} style={{ height: '6px', width: '6px', borderRadius: '50%', backgroundColor: hexToRgba(activeAccent, 0.38 + dot * 0.2) }} />)}
+          </div>
+          <div style={{ width: `${size - 14}px`, height: `${size - 14}px`, marginTop: '10px' }} dangerouslySetInnerHTML={{ __html: dynamicSvgRaw }} />
+        </div>
+      );
+    }
+
+    if (visualStyle === 'paper-collage') {
+      return (
+        <div
+          style={{
+            width: `${size + 42}px`,
+            height: `${size + 26}px`,
+            padding: '14px',
+            backgroundColor: darkBg ? bgSecondary : '#FFFFFF',
+            border: `1px solid ${borderCol}`,
+            boxShadow: `10px 12px 0 ${hexToRgba(activeAccent, 0.2)}, 0 22px 42px ${hexToRgba(ink, 0.08)}`,
+            transform: `rotate(${slideIndex % 2 === 0 ? '-2deg' : '2deg'})`,
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div style={{ position: 'absolute', top: '-9px', left: '42%', width: '78px', height: '18px', backgroundColor: activeAccentSoft, border: `1px solid ${hexToRgba(activeAccent, 0.26)}` }} />
+          <div style={{ width: `${size - 6}px`, height: `${size - 6}px` }} dangerouslySetInnerHTML={{ __html: dynamicSvgRaw }} />
+        </div>
+      );
+    }
+
+    if (visualStyle === 'story-frames' || visualStyle === 'studio-grid-system') {
+      return (
+        <div
+          style={{
+            width: `${size + 38}px`,
+            height: `${size + 34}px`,
+            borderRadius: visualStyle === 'story-frames' ? '28px' : '8px',
+            backgroundColor: darkBg ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.68)',
+            border: `1px solid ${hexToRgba(activeAccent, 0.32)}`,
+            boxShadow: `0 18px 40px ${hexToRgba(activeAccent, 0.1)}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+          }}
+        >
+          <div style={{ width: `${size - 14}px`, height: `${size - 14}px` }} dangerouslySetInnerHTML={{ __html: dynamicSvgRaw }} />
+        </div>
+      );
+    }
 
     if (
       visualStyle === 'modern-bento' ||
@@ -860,7 +979,14 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
       );
     }
 
-    if (visualStyle === 'modern-bento' || visualStyle === 'bold-highlight') {
+    if (
+      visualStyle === 'modern-bento' ||
+      visualStyle === 'bold-highlight' ||
+      visualStyle === 'dashboard-analytics' ||
+      visualStyle === 'studio-grid-system' ||
+      visualStyle === 'story-frames' ||
+      visualStyle === 'aurora-glass'
+    ) {
       return (
         <div
           style={{
@@ -1589,6 +1715,245 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
             />
           </>
         );
+      case 'aurora-glass':
+        return (
+          <>
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: `radial-gradient(ellipse at 12% 16%, ${hexToRgba(activeAccent, 0.25)} 0%, transparent 36%), radial-gradient(ellipse at 90% 78%, ${hexToRgba(activeAccent, 0.16)} 0%, transparent 35%)`,
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: `${padTop - 14}px`,
+                bottom: `${padBottom - 14}px`,
+                left: `${padLeft - 14}px`,
+                right: `${padRight - 14}px`,
+                border: `1px solid ${hexToRgba(activeAccent, 0.42)}`,
+                borderRadius: '42px',
+                background: darkBg ? 'rgba(255,255,255,0.025)' : 'rgba(255,255,255,0.35)',
+                boxShadow: `0 0 48px ${hexToRgba(activeAccent, 0.12)}`,
+                pointerEvents: 'none',
+                zIndex: 2,
+              }}
+            />
+          </>
+        );
+      case 'kinetic-type':
+        return (
+          <>
+            <div
+              style={{
+                position: 'absolute',
+                right: `${padRight - 20}px`,
+                bottom: `${padBottom + 80}px`,
+                fontFamily: fontPairing.headingFamily,
+                fontSize: isSquare ? '360px' : '510px',
+                lineHeight: 0.72,
+                fontWeight: 800,
+                color: hexToRgba(activeAccent, darkBg ? 0.13 : 0.09),
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            >
+              {numStr}
+            </div>
+            <div
+              style={{
+                position: 'absolute',
+                left: `${padLeft - 28}px`,
+                top: `${padTop + 110}px`,
+                bottom: `${padBottom + 110}px`,
+                width: '8px',
+                borderRadius: '999px',
+                backgroundColor: activeAccent,
+                opacity: 0.85,
+                pointerEvents: 'none',
+                zIndex: 2,
+              }}
+            />
+          </>
+        );
+      case 'paper-collage':
+        return (
+          <>
+            <div
+              style={{
+                position: 'absolute',
+                right: `${padRight + 8}px`,
+                bottom: `${padBottom + 140}px`,
+                width: '330px',
+                height: '260px',
+                backgroundColor: bgSecondary,
+                border: `1px solid ${borderCol}`,
+                boxShadow: `0 24px 56px ${hexToRgba(ink, 0.10)}`,
+                transform: 'rotate(5deg)',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                left: `${padLeft + 35}px`,
+                bottom: `${padBottom + 178}px`,
+                width: '220px',
+                height: '170px',
+                backgroundColor: activeAccentSoft,
+                border: `1px solid ${hexToRgba(activeAccent, 0.28)}`,
+                transform: 'rotate(-7deg)',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: `${padTop + 55}px`,
+                right: `${padRight + 26}px`,
+                width: '104px',
+                height: '28px',
+                backgroundColor: activeAccent,
+                opacity: 0.82,
+                transform: 'rotate(7deg)',
+                pointerEvents: 'none',
+                zIndex: 3,
+              }}
+            />
+          </>
+        );
+      case 'dashboard-analytics':
+        return (
+          <>
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: '14px',
+                backgroundColor: activeAccent,
+                pointerEvents: 'none',
+                zIndex: 3,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: `${padTop - 22}px`,
+                right: `${padRight}px`,
+                width: '168px',
+                height: '72px',
+                borderRadius: '16px',
+                border: `1px solid ${borderCol}`,
+                backgroundColor: darkBg ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.7)',
+                backgroundImage: `linear-gradient(to top, ${hexToRgba(activeAccent, 0.18)} 1px, transparent 1px)`,
+                backgroundSize: '100% 18px',
+                pointerEvents: 'none',
+                zIndex: 2,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: `${padTop + 18}px`,
+                right: `${padRight + 18}px`,
+                width: '132px',
+                height: '44px',
+                background: `linear-gradient(135deg, transparent 10%, ${hexToRgba(activeAccent, 0.38)} 10% 15%, transparent 15% 28%, ${hexToRgba(activeAccent, 0.58)} 28% 34%, transparent 34% 48%, ${hexToRgba(activeAccent, 0.78)} 48% 55%, transparent 55%)`,
+                pointerEvents: 'none',
+                zIndex: 3,
+              }}
+            />
+          </>
+        );
+      case 'studio-grid-system':
+        return (
+          <>
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: `linear-gradient(to right, ${hexToRgba(activeAccent, 0.08)} 1px, transparent 1px), linear-gradient(to bottom, ${hexToRgba(activeAccent, 0.08)} 1px, transparent 1px)`,
+                backgroundSize: '90px 90px',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: `${padTop + 54}px`,
+                bottom: `${padBottom + 62}px`,
+                left: '33.333%',
+                borderLeft: `1px dashed ${hexToRgba(activeAccent, 0.28)}`,
+                pointerEvents: 'none',
+                zIndex: 2,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: `${padTop + 54}px`,
+                bottom: `${padBottom + 62}px`,
+                left: '66.666%',
+                borderLeft: `1px dashed ${hexToRgba(activeAccent, 0.28)}`,
+                pointerEvents: 'none',
+                zIndex: 2,
+              }}
+            />
+          </>
+        );
+      case 'story-frames':
+        return (
+          <>
+            <div
+              style={{
+                position: 'absolute',
+                top: `${padTop + 78}px`,
+                bottom: `${padBottom + 78}px`,
+                left: `${padLeft - 28}px`,
+                width: '3px',
+                background: `linear-gradient(to bottom, ${hexToRgba(activeAccent, 0.12)}, ${activeAccent}, ${hexToRgba(activeAccent, 0.12)})`,
+                pointerEvents: 'none',
+                zIndex: 2,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: `${padTop + 112}px`,
+                left: `${padLeft - 38}px`,
+                width: '23px',
+                height: '23px',
+                borderRadius: '50%',
+                backgroundColor: bgPrimary,
+                border: `4px solid ${activeAccent}`,
+                boxShadow: `0 0 0 7px ${activeAccentSoft}`,
+                pointerEvents: 'none',
+                zIndex: 3,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: `${padTop - 18}px`,
+                bottom: `${padBottom - 18}px`,
+                left: `${padLeft - 18}px`,
+                right: `${padRight - 18}px`,
+                border: `1px solid ${borderCol}`,
+                borderRadius: '28px',
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            />
+          </>
+        );
       default:
         return null;
     }
@@ -1601,7 +1966,8 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
 
     if (
       (visualStyle === 'data-charts-glass' ||
-        visualStyle === 'grow-corporate-blue') &&
+        visualStyle === 'grow-corporate-blue' ||
+        visualStyle === 'dashboard-analytics') &&
       (slide.layout === 'big-stat' || slide.layout === 'numbered-insight')
     ) {
       return (
@@ -1787,7 +2153,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                     flexShrink: 0,
                   }}
                 >
-                  {slide.statValue || '85%'}
+                  {slide.statValue || 'À SOURCER'}
                 </div>
 
                 {slide.statLabel && (

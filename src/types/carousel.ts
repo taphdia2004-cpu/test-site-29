@@ -42,7 +42,13 @@ export type VisualStyleId =
   | 'japanese-zen'
   | 'luxury-monogram'
   | 'split-magazine'
-  | 'notebook-paper';
+  | 'notebook-paper'
+  | 'aurora-glass'
+  | 'kinetic-type'
+  | 'paper-collage'
+  | 'dashboard-analytics'
+  | 'studio-grid-system'
+  | 'story-frames';
 
 export type CarouselTypeId =
   | 'auto-smart'
@@ -51,7 +57,12 @@ export type CarouselTypeId =
   | 'stats-proof'
   | 'before-after'
   | 'story-pov'
-  | 'secret-list';
+  | 'secret-list'
+  | 'diagnostic-audit'
+  | 'seven-day-plan'
+  | 'case-study'
+  | 'resource-kit'
+  | 'decision-path';
 
 export type FontPairingId =
   | 'instrument-jakarta'

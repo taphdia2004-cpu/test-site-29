@@ -13,50 +13,106 @@ export interface CarouselTypeSpec {
   name: string;
   badge: string;
   description: string;
+  recommendedVisualStyle: VisualStyleId;
+  sampleTopic: string;
 }
 
 export const CAROUSEL_TYPES: CarouselTypeSpec[] = [
   {
     id: 'auto-smart',
-    name: '✨ Choix IA Automatique',
+    name: '✨ Création guidée',
     badge: 'Recommandé',
-    description: 'L’IA analyse ton idée et choisit le meilleur angle, les phrases et les illustrations.',
+    description: 'Le studio propose un angle, construit une progression claire et associe des illustrations pertinentes.',
+    recommendedVisualStyle: 'studio-grid-system',
+    sampleTopic: 'Comment créer un contenu qui attire des clients',
   },
   {
     id: 'framework-system',
-    name: '📐 Système & Méthode',
-    badge: '+340% Saves',
-    description: 'Un plan d’action étape par étape avec une fiche mémo finale.',
+    name: '📐 Méthode pas à pas',
+    badge: 'À enregistrer',
+    description: 'Transforme un sujet en étapes simples avec un récapitulatif pratique.',
+    recommendedVisualStyle: 'studio-grid-system',
+    sampleTopic: 'Une méthode simple pour mieux organiser sa semaine',
   },
   {
     id: 'myth-buster',
-    name: '⚡ Mythe vs Réalité',
-    badge: 'Contre-Intuitif',
-    description: 'Détruit une croyance populaire dès la Slide 1 (« Tout ce qu’on t’a dit est faux »).',
+    name: '⚡ Mythe & réalité',
+    badge: 'Contraste',
+    description: 'Présente une idée reçue, nuance le point de vue et explique quoi faire à la place.',
+    recommendedVisualStyle: 'kinetic-type',
+    sampleTopic: 'Mythe ou réalité : faut-il publier tous les jours ?',
   },
   {
     id: 'stats-proof',
-    name: '📊 Chiffres & Preuves',
-    badge: 'Autorité',
-    description: 'Appuie chaque argument sur des statistiques et lois chiffrées.',
+    name: '📊 Données & preuves',
+    badge: 'À vérifier',
+    description: 'Structure des preuves et des indicateurs sans inventer de chiffres : ajoute les sources avant publication.',
+    recommendedVisualStyle: 'dashboard-analytics',
+    sampleTopic: 'Les indicateurs à suivre pour améliorer son contenu',
   },
   {
     id: 'before-after',
-    name: '🔄 Avant / Après',
+    name: '🔄 Avant / après',
     badge: 'Transformation',
-    description: 'Compare l’ancienne méthode épuisante avec la nouvelle méthode intelligente.',
+    description: 'Rend visible le changement entre une situation de départ et une nouvelle approche.',
+    recommendedVisualStyle: 'paper-collage',
+    sampleTopic: 'Avant / après : simplifier sa stratégie de contenu',
   },
   {
     id: 'story-pov',
-    name: '📖 Storytelling',
-    badge: 'TikTok Photo',
-    description: 'Raconte un déclic vécu et les leçons concrètes qui en découlent.',
+    name: '📖 Récit & déclic',
+    badge: 'Storytelling',
+    description: 'Un récit court, un obstacle clair et une leçon concrète à retenir.',
+    recommendedVisualStyle: 'story-frames',
+    sampleTopic: 'Le déclic qui m’a aidé à mieux gérer mon temps',
   },
   {
     id: 'secret-list',
-    name: '🗝️ Liste Secrète',
+    name: '🗝️ Liste de conseils',
     badge: 'Curiosité',
-    description: 'Révèle des règles cachées que 99% des gens découvrent trop tard.',
+    description: 'Une sélection de pistes utiles avec une promesse précise et une conclusion mémorisable.',
+    recommendedVisualStyle: 'aurora-glass',
+    sampleTopic: 'Les habitudes qui rendent une routine plus efficace',
+  },
+  {
+    id: 'diagnostic-audit',
+    name: '🩺 Auto-diagnostic express',
+    badge: 'Interactif',
+    description: 'Aide le lecteur à repérer son principal blocage, puis lui donne une première action.',
+    recommendedVisualStyle: 'dashboard-analytics',
+    sampleTopic: 'Audit express de sa présence sur Instagram',
+  },
+  {
+    id: 'seven-day-plan',
+    name: '🗓️ Plan d’action sur 7 jours',
+    badge: 'Challenge',
+    description: 'Un défi progressif : une action simple par jour et un bilan final.',
+    recommendedVisualStyle: 'story-frames',
+    sampleTopic: '7 jours pour construire une routine de création de contenu',
+  },
+  {
+    id: 'case-study',
+    name: '🔎 Étude de cas',
+    badge: 'Décomposition',
+    description: 'Décompose le contexte, le choix stratégique, les preuves et les enseignements à réutiliser.',
+    recommendedVisualStyle: 'dashboard-analytics',
+    sampleTopic: 'Étude de cas : lancer une offre avec une petite audience',
+  },
+  {
+    id: 'resource-kit',
+    name: '🧰 Kit pratique à sauvegarder',
+    badge: 'Ressource',
+    description: 'Fournit une checklist, un mini-plan et des consignes directement réutilisables.',
+    recommendedVisualStyle: 'studio-grid-system',
+    sampleTopic: 'Kit de lancement pour son premier carrousel Instagram',
+  },
+  {
+    id: 'decision-path',
+    name: '🧭 Guide de décision',
+    badge: 'Choisir sa voie',
+    description: 'Un arbre de décision simple qui guide vers l’option adaptée à la situation.',
+    recommendedVisualStyle: 'aurora-glass',
+    sampleTopic: 'Comment choisir le bon format de contenu pour son objectif',
   },
 ];
 
@@ -91,7 +147,7 @@ export const VISUAL_STYLES: VisualStyleSpec[] = [
     id: 'grow-corporate-blue',
     name: '📁 Corporate Bleu & Dossier',
     badge: 'Nouveau · Grow',
-    description: 'Alterne Bleu Royal et Gris clair, camembert +7%, carte dossier bleue et avis client',
+    description: 'Bleu royal et gris clair, cartes analytiques et graphiques décoratifs à compléter avec des données sourcées',
   },
   {
     id: 'neon-purple-agency',
@@ -109,7 +165,7 @@ export const VISUAL_STYLES: VisualStyleSpec[] = [
     id: 'data-charts-glass',
     name: '📊 Infographie & Graphiques',
     badge: 'Nouveau · Charts',
-    description: 'Anneaux 50% / 78%, graphiques en barres et courbes dégradées + numéro géant',
+    description: 'Anneaux et graphiques décoratifs, avec un emplacement visible pour ajouter des données vérifiées',
   },
   {
     id: 'designmates-giant-num',
@@ -190,6 +246,42 @@ export const VISUAL_STYLES: VisualStyleSpec[] = [
     name: '📓 Carnet de Penseur',
     description: 'Lignes de carnet subtiles et marge éditoriale rouge/accent',
   },
+  {
+    id: 'aurora-glass',
+    name: '🌌 Verre Aurora',
+    badge: 'Nouveau · Premium',
+    description: 'Cartes translucides, halos lumineux maîtrisés et détails fins, entièrement recolorables.',
+  },
+  {
+    id: 'kinetic-type',
+    name: '🔠 Typographie Cinétique',
+    badge: 'Nouveau · Impact',
+    description: 'Titres éditoriaux XXL, numéros de chapitre et accent typographique énergique.',
+  },
+  {
+    id: 'paper-collage',
+    name: '🧩 Collage Papier',
+    badge: 'Nouveau · Créatif',
+    description: 'Plans superposés, rubans colorés et illustration façon moodboard éditorial.',
+  },
+  {
+    id: 'dashboard-analytics',
+    name: '📈 Dashboard Analytics',
+    badge: 'Nouveau · Pro',
+    description: 'Cartes de données et structure nette ; les indicateurs restent à compléter avec des sources vérifiées.',
+  },
+  {
+    id: 'studio-grid-system',
+    name: '📐 Grille Studio Pro',
+    badge: 'Nouveau · Swiss',
+    description: 'Grille de mise en page précise, repères éditoriaux et alignements professionnels.',
+  },
+  {
+    id: 'story-frames',
+    name: '🎞️ Récit en Séquences',
+    badge: 'Nouveau · Story',
+    description: 'Repères de progression, chapitres et rythme visuel pour raconter une transformation.',
+  },
 ];
 
 export function matchIllustrationToText(text: string, fallbackIndex = 0): string {
@@ -197,7 +289,7 @@ export function matchIllustrationToText(text: string, fallbackIndex = 0): string
 
   const rules: { keywords: string[]; id: string }[] = [
     { keywords: ['cerveau', 'neuro', 'synapse', 'cognitif', 'mental', 'dopamine', 'penser'], id: 'brain-synapse' },
-    { keywords: ['temps', '2,8', 'seconde', 'minute', 'sablier', 'chrono', 'tard'], id: 'hourglass-bloom' },
+    { keywords: ['temps', 'seconde', 'minute', 'sablier', 'chrono', 'tard'], id: 'hourglass-bloom' },
     { keywords: ['urgent', 'vite', 'voler', 'gagner du temps', 'accélérer', 'heures'], id: 'hourglass-wings' },
     { keywords: ['routine', 'habitude', 'cycle', 'rythme', 'quotidien', 'discipline', 'constance', 'régularité'], id: 'hourglass-orbit' },
     { keywords: ['calme', 'méditation', 'stress', 'respirer', 'paix', 'sérénité'], id: 'lotus-mind' },
@@ -208,9 +300,9 @@ export function matchIllustrationToText(text: string, fallbackIndex = 0): string
     { keywords: ['sécurité', 'protéger', 'garantie', 'risque', 'bouclier'], id: 'shield-trust' },
     { keywords: ['leader', 'roi', 'numéro 1', 'autorité', 'statut', 'couronne', 'expert'], id: 'crown-minimal' },
     { keywords: ['cible', 'précis', 'flèche', 'viser', 'exact'], id: 'target-arrow' },
-    { keywords: ['80/20', '80%', '20%', 'compar', 'avant', 'après', 'erreur', 'équilibre'], id: 'scale-justice' },
+    { keywords: ['compar', 'avant', 'après', 'erreur', 'équilibre'], id: 'scale-justice' },
     { keywords: ['stratégie', 'échec', 'positionnement', 'gagner', 'concurrent', 'plan'], id: 'chess-strategy' },
-    { keywords: ['secret', 'clé', 'porte', 'accéder', 'caché', '99%'], id: 'keyhole-portal' },
+    { keywords: ['secret', 'clé', 'porte', 'accéder', 'caché'], id: 'keyhole-portal' },
     { keywords: ['débloquer', 'cadenas', 'libérer', 'ouvrir', 'solution'], id: 'lock-unlocked' },
     { keywords: ['objectif', 'sommet', 'montagne', 'réussir', 'ambition', 'défi'], id: 'mountain-flag' },
     { keywords: ['direction', 'boussole', 'chemin', 'partir', 'lancer', 'démarrer'], id: 'compass-plane' },
@@ -269,10 +361,6 @@ interface NicheKnowledge {
   recommendedTheme: EditorialThemeId;
   recommendedStyle: VisualStyleId;
   recommendedFont: FontPairingId;
-  statValue: string;
-  statLabel: string;
-  statTitle: string;
-  statSubtitle: string;
   mythTitle: string;
   mythWrong: string;
   mythRight: string;
@@ -281,6 +369,7 @@ interface NicheKnowledge {
   checklistTitle: string;
   checklistItems: string[];
   quoteText: string;
+  captionNote?: string;
 }
 
 const NICHE_DATABASE: NicheKnowledge[] = [
@@ -289,132 +378,110 @@ const NICHE_DATABASE: NicheKnowledge[] = [
     recommendedTheme: 'kinfolk-linen',
     recommendedStyle: 'shodwe-brush',
     recommendedFont: 'outfit-space',
-    statValue: '23 min',
-    statLabel: 'C’est le temps exact qu’il faut à ton cerveau pour se reconcentrer après une seule notification (Étude UC Irvine).',
-    statTitle: 'Tu ne manques pas de volonté. Tu manques de *clarté énergétique*.',
-    statSubtitle: 'La procrastination n’est jamais de la paresse : c’est une réponse du cerveau face à une tâche trop floue.',
-    mythTitle: 'L’erreur qui détruit *90% de tes journées*',
-    mythWrong: 'Faire une liste de 15 tâches le matin et répondre aux messages dès le réveil.',
-    mythRight: 'Verrouiller 1 seule priorité critique la veille au soir et travailler 90 min en mode avion.',
-    step1Title: 'La Règle des *2 Minutes* pour briser l’inertie.',
-    step1Subtitle: 'Ne cherche pas à terminer le projet : oblige-toi seulement à travailler dessus pendant 120 secondes. Le mouvement crée la motivation.',
-    checklistTitle: 'Le protocole *anti-procrastination* en 3 points',
+    mythTitle: 'La fausse solution vs *une approche plus réaliste*',
+    mythWrong: 'Multiplier les outils et remplir sa journée sans choisir la prochaine priorité.',
+    mythRight: 'Définir une action claire, réduire les distractions et prévoir un moment adapté pour commencer.',
+    step1Title: 'Rends la première action *facile à commencer*.',
+    step1Subtitle: 'Découpe la tâche jusqu’à ce que le premier geste soit évident. Observe ce qui te bloque et ajuste ton environnement.',
+    checklistTitle: 'Un protocole simple pour *passer à l’action*',
     checklistItems: [
-      'Découper tout objectif intimidant en *une sous-action de 5 minutes*',
-      'Laisser son téléphone *dans une autre pièce* pendant le premier bloc de travail',
-      'Définir son *objectif n°1 du lendemain* avant de fermer son ordinateur le soir',
+      'Nommer la prochaine action avec un verbe concret',
+      'Éloigner les distractions pendant le créneau choisi',
+      'Noter ce qui a aidé avant de recommencer',
     ],
-    quoteText: '« L’amateur attend d’être inspiré pour agir. Le professionnel agit et laisse *l’action créer l’inspiration*. »',
+    quoteText: '« Quand la prochaine action est claire, il devient plus facile de s’y mettre. »',
   },
   {
     keywords: ['ia', 'intelligence artificielle', 'chatgpt', 'automatisation', 'tech', 'outil', 'prompt', 'claude', 'futur'],
     recommendedTheme: 'galerie-cobalt',
     recommendedStyle: 'nexora-acid-lime',
     recommendedFont: 'anton-jakarta',
-    statValue: '4,2 h',
-    statLabel: 'Gagnées chaque jour par les indépendants qui délèguent leurs tâches répétitives à des systèmes IA structurés.',
-    statTitle: 'L’IA ne va pas te remplacer. Mais quelqu’un qui *maîtrise les systèmes IA* le fera.',
-    statSubtitle: 'En 2026, utiliser l’IA comme un simple moteur de recherche revient à utiliser une Formule 1 pour aller chercher le pain.',
-    mythTitle: 'Prompt Amateur vs *Architecture IA*',
-    mythWrong: 'Taper une phrase vague (« Écris-moi un post ») et obtenir un texte robotique sans âme.',
-    mythRight: 'Donner un Rôle, un Contexte précis, 3 Exemples de ton style et des Contraintes strictes.',
-    step1Title: 'La formule *R.C.E.C* pour des résultats parfaits.',
-    step1Subtitle: 'Rôle + Contexte + Exemple + Contrainte : ces 4 briques transforment n’importe quel modèle IA en expert senior à ton service.',
-    checklistTitle: 'Les *3 réflexes IA* à adopter dès aujourd’hui',
+    mythTitle: 'Prompt vague vs *brief contextualisé*',
+    mythWrong: 'Demander un texte générique sans préciser le public, l’objectif ni le ton.',
+    mythRight: 'Fournir le contexte, son angle, un exemple de style et les limites à respecter.',
+    step1Title: 'Structure ta consigne avec *Rôle, Contexte, Exemple, Contraintes*.',
+    step1Subtitle: 'Décris le rôle attendu, apporte le contexte, montre un exemple et précise les limites. Relis la sortie : un texte généré n’est pas une source.',
+    checklistTitle: 'Les bons réflexes pour *utiliser une IA*',
     checklistItems: [
-      'Créer une *bibliothèque de tes meilleurs prompts* au lieu de repartir de zéro',
-      'Toujours fournir *ton propre angle et ton expérience* avant de générer',
-      'Interdire les mots génériques et imposer un *style direct et incarné*',
+      'Formuler le public, le besoin et le résultat attendu',
+      'Ajouter un exemple fidèle à ta voix',
+      'Vérifier les faits et retirer les éléments inventés',
     ],
-    quoteText: '« L’intelligence artificielle amplifie la clarté de ta pensée. Si ta pensée est floue, *le résultat sera flou*. »',
+    quoteText: '« Un bon résultat commence par une consigne claire et se termine par une relecture humaine. »',
   },
   {
     keywords: ['argent', 'finance', 'investir', 'investissement', 'bourse', 'épargne', 'liberté financière', 'richesse', 'budget', 'crypto', 'immobilier'],
     recommendedTheme: 'emerald-luxury',
     recommendedStyle: 'simplist-highlight',
     recommendedFont: 'playfair-dmsans',
-    statValue: '8ème',
-    statLabel: 'Merveille du monde selon Einstein : les intérêts composés transforment la régularité modeste en patrimoine massif.',
-    statTitle: 'Ce n’est pas combien tu gagnes qui compte, mais *combien tu fais travailler*.',
-    statSubtitle: 'La vraie richesse est silencieuse : elle se construit par des systèmes automatiques, pas par des coups de chance.',
-    mythTitle: 'Le piège de l’épargnant vs *L’Investisseur*',
-    mythWrong: 'Attendre ce qu’il reste à la fin du mois pour épargner et chercher le coup de poker parfait.',
-    mythRight: 'Se payer en premier le 1er du mois (15% à 20% automatisés) sur des actifs diversifiés à long terme.',
-    step1Title: 'Automatise ton *taux d’investissement* dès le jour de paie.',
-    step1Subtitle: 'Si tu ne vois pas l’argent sur ton compte courant, tu ne le dépenses pas. L’automatisation bat la discipline.',
-    checklistTitle: 'Les *3 règles d’or* d’une finance saine',
+    mythTitle: 'Le bon moment vs *un plan adapté à sa situation*',
+    mythWrong: 'Décider sur une promesse de rendement ou une tendance isolée.',
+    mythRight: 'Clarifier ses objectifs, ses contraintes et son horizon avant d’étudier les options.',
+    step1Title: 'Commence par clarifier *ton budget et ton objectif*.',
+    step1Subtitle: 'Distingue les dépenses nécessaires, les priorités et les sommes que tu peux réellement engager. Compare les risques, les frais et les sources avant toute décision.',
+    checklistTitle: 'Des repères pour *évaluer une décision financière*',
     checklistItems: [
-      'Bâtir un *matelas de sécurité de 3 à 6 mois* avant toute prise de risque',
-      'Investir à *date fixe chaque mois* (DCA) sans regarder les émotions du marché',
-      'Éviter l’inflation du style de vie quand *tes revenus augmentent*',
+      'Écrire ses objectifs et l’horizon envisagé',
+      'Comprendre les risques et les frais de chaque option',
+      'Vérifier les sources et se méfier des promesses garanties',
     ],
-    quoteText: '« La liberté financière, c’est quand tes actifs génèrent plus que *le coût de ta vie idéale*. »',
+    quoteText: '« Une décision financière mérite du contexte, des sources et une vraie compréhension des risques. »',
+    captionNote: 'Contenu éducatif général : ce carrousel ne constitue pas un conseil financier personnalisé.',
   },
   {
     keywords: ['vente', 'vendre', 'business', 'client', 'marketing', 'offre', 'entrepreneur', 'freelance', 'e-commerce', 'marque', 'prix', 'copywriting', 'site', 'confiance'],
     recommendedTheme: 'kinfolk-linen',
     recommendedStyle: 'skale-pinned-notes',
     recommendedFont: 'outfit-space',
-    statValue: '85%',
-    statLabel: 'Des décisions d’achat sont prises par l’émotion en moins de 5 secondes, puis justifiées par la logique.',
-    statTitle: 'Les gens n’achètent jamais ton produit. Ils achètent *leur propre transformation*.',
-    statSubtitle: 'Arrête de lister tes fonctionnalités techniques : parle du problème brûlant que tu résous dans leur vie.',
-    mythTitle: 'Vendeur insistant vs *Offre Irrésistible*',
-    mythWrong: 'Baisser ses prix pour convaincre et parler uniquement de soi et de sa méthode.',
-    mythRight: 'Quantifier le coût du problème, prouver le résultat rapide et réduire le risque à zéro.',
-    step1Title: 'Vends la *destination*, pas les caractéristiques de l’avion.',
-    step1Subtitle: 'Ton client veut savoir à quelle vitesse il atteindra son résultat et quel obstacle tu vas lui éviter.',
-    checklistTitle: 'Les *3 piliers* d’une offre de haute valeur',
+    mythTitle: 'Parler des fonctionnalités vs *montrer la valeur*',
+    mythWrong: 'Lister les caractéristiques sans les relier aux besoins du public.',
+    mythRight: 'Expliquer à qui l’offre s’adresse, quel problème elle traite et quelles sont ses limites.',
+    step1Title: 'Ancre ton message dans *le problème de ton public*.',
+    step1Subtitle: 'Décris une situation concrète et l’approche proposée. Présente des résultats vérifiables sans promettre un résultat garanti.',
+    checklistTitle: 'Les repères d’une *offre plus claire*',
     checklistItems: [
-      'Promettre un *résultat tangible et mesurable* dans un délai clair',
-      'Apporter une *preuve visuelle ou chiffrée* dès les premières secondes',
-      'Supprimer la friction avec une *garantie et une étape simple*',
+      'Préciser à qui l’offre convient — et à qui elle ne convient pas',
+      'Montrer ce qui est inclus avec un exemple vérifiable',
+      'Présenter une prochaine étape claire, sans pression',
     ],
-    quoteText: '« Le prix n’est un problème que lorsque *la valeur perçue* n’est pas assez claire. »',
+    quoteText: '« La valeur d’une offre devient plus claire quand ses bénéfices et ses limites sont expliqués. »',
   },
   {
     keywords: ['sommeil', 'dormir', 'santé', 'sport', 'fitness', 'perdre du poids', 'énergie', 'nutrition', 'corps', 'fatigue', 'forme'],
     recommendedTheme: 'emerald-luxury',
     recommendedStyle: 'data-charts-glass',
     recommendedFont: 'cormorant-jakarta',
-    statValue: '90 min',
-    statLabel: 'La durée d’un cycle complet de récupération profonde : la qualité de tes nuits dicte 100% de ton énergie du lendemain.',
-    statTitle: 'Ton énergie est ton *actif le plus précieux*. Arrête de la brûler par les deux bouts.',
-    statSubtitle: 'Aucun café ni aucune technique de productivité ne peut compenser une biologie épuisée.',
-    mythTitle: 'Régime extrême vs *Biologie Durable*',
-    mythWrong: 'Tout changer du jour au lendemain pendant 10 jours puis abandonner par épuisement.',
-    mythRight: 'Ancrer 3 micro-habitudes physiologiques simples qui tiennent toute l’année sans frustration.',
-    step1Title: 'La règle du *Soleil Matinal* et du repos profond.',
-    step1Subtitle: '10 minutes de lumière naturelle au réveil règlent ton horloge biologique et préparent ton sommeil 14 heures plus tard.',
-    checklistTitle: 'Les *3 habitudes vitales* à ancrer dès ce soir',
+    mythTitle: 'Solution miracle vs *habitudes adaptées*',
+    mythWrong: 'Suivre une règle universelle trouvée en ligne sans vérifier si elle convient.',
+    mythRight: 'Observer ses habitudes, avancer progressivement et demander conseil en cas de doute.',
+    step1Title: 'Commence par un changement *adapté à ton quotidien*.',
+    step1Subtitle: 'Choisis une habitude soutenable et observe comment tu te sens. Les besoins varient : pour un symptôme ou une question médicale, consulte un professionnel qualifié.',
+    checklistTitle: 'Des habitudes à adapter à *ta situation*',
     checklistItems: [
-      'Couper les écrans lumineux *60 minutes avant de dormir*',
-      'Marcher *8 000 à 10 000 pas par jour* pour activer la récupération',
-      'Garder des *horaires de lever réguliers* (à 30 minutes près)',
+      'Choisir un rythme de repos qui te convient',
+      'Privilégier une activité et une alimentation adaptées à tes besoins',
+      'Demander un avis professionnel si un symptôme persiste',
     ],
-    quoteText: '« Prends soin de ta biologie en premier : c’est le seul endroit où *tu dois vivre toute ta vie*. »',
+    quoteText: '« Les conseils de bien-être gagnent à être adaptés à la personne et à son contexte. »',
+    captionNote: 'Contenu éducatif général, non médical. Pour un diagnostic ou un traitement, consulte un professionnel de santé.',
   },
   {
     keywords: ['tiktok', 'instagram', 'contenu', 'carrousel', 'créateur', 'abonné', 'vue', 'algorithme', 'réseaux sociaux', 'viral', 'hook', 'ui', 'design'],
     recommendedTheme: 'lavender-silk',
     recommendedStyle: 'designmates-giant-num',
     recommendedFont: 'fraunces-space',
-    statValue: '2,8 sec',
-    statLabel: 'Le temps exact dont dispose ta première slide pour stopper le pouce avant que l’utilisateur ne continue de scroller.',
-    statTitle: 'L’algorithme ne récompense pas les plus beaux comptes. Il récompense *la rétention et les Saves*.',
-    statSubtitle: 'En 2026 sur TikTok Photo Mode et Instagram, les enregistrements (Saves) et les partages en DM sont les signaux rois.',
-    mythTitle: 'Poster pour poster vs *Créer pour les Favoris*',
-    mythWrong: 'Écrire des titres vagues (« 5 astuces business ») sur des visuels surchargés de texte.',
-    mythRight: 'Ouvrir une boucle de curiosité en Slide 1 et offrir une fiche mémo sauvegardable en fin de post.',
-    step1Title: 'Ta Slide 1 attire le regard, ta *Slide 2 verrouille le swipe*.',
-    step1Subtitle: '80% de la bataille se joue sur tes deux premières images : enchaîne une promesse forte avec un chiffre ou un constat choc.',
-    checklistTitle: 'L’anatomie d’un *post viral* en 3 règles',
+    mythTitle: 'Publier sans intention vs *concevoir pour le lecteur*',
+    mythWrong: 'Surcharger la couverture ou promettre un résultat spectaculaire sans preuve.',
+    mythRight: 'Ouvrir avec une promesse claire, développer une idée par slide et terminer par une action utile.',
+    step1Title: 'Construis une progression qui donne envie de *continuer à lire*.',
+    step1Subtitle: 'La couverture annonce le bénéfice, les slides suivantes le développent et la fin aide le lecteur à appliquer l’idée.',
+    checklistTitle: 'Une checklist éditoriale pour *un carrousel lisible*',
     checklistItems: [
-      'Un Hook de couverture en *moins de 9 mots* qui casse une croyance',
-      'Une alternance entre *Chiffre choc, Avant/Après et Illustration*',
-      'Un appel à l’action tourné vers *l’enregistrement en favoris*',
+      'Un hook fidèle au contenu',
+      'Une idée principale par slide',
+      'Une conclusion pertinente plutôt qu’une promesse de portée',
     ],
-    quoteText: '« Ne crée pas du contenu pour remplir le fil d’actualité. Crée des ressources qu’on a *peur de perdre si on ne les enregistre pas*. »',
+    quoteText: '« Crée une ressource claire, utile et assez honnête pour mériter d’être partagée. »',
   },
 ];
 
@@ -439,15 +506,25 @@ export function buildSmartAICarousel(params: {
 
   let activeType: CarouselTypeId = params.carouselType;
   if (activeType === 'auto-smart') {
-    if (lower.includes('erreur') || lower.includes('mythe') || lower.includes('faux') || lower.includes('arrête')) {
+    if (lower.includes('7 jours') || lower.includes('sept jours') || lower.includes('challenge')) {
+      activeType = 'seven-day-plan';
+    } else if (lower.includes('audit') || lower.includes('diagnostic') || lower.includes('évaluer')) {
+      activeType = 'diagnostic-audit';
+    } else if (lower.includes('étude de cas') || lower.includes('cas client') || lower.includes('case study')) {
+      activeType = 'case-study';
+    } else if (lower.includes('kit') || lower.includes('modèle') || lower.includes('template') || lower.includes('checklist')) {
+      activeType = 'resource-kit';
+    } else if (lower.includes('choisir') || lower.includes('quelle option') || lower.includes('décider')) {
+      activeType = 'decision-path';
+    } else if (lower.includes('mythe') || lower.includes('faux') || lower.includes('idée reçue')) {
       activeType = 'myth-buster';
-    } else if (lower.includes('chiffre') || lower.includes('étude') || lower.includes('stat') || lower.includes('analys')) {
+    } else if (lower.includes('chiffre') || lower.includes('étude') || lower.includes('stat') || lower.includes('preuve')) {
       activeType = 'stats-proof';
-    } else if (lower.includes('avant') || lower.includes('après') || lower.includes('passer de') || lower.includes('transform')) {
+    } else if (lower.includes('avant') || lower.includes('après') || lower.includes('transformation')) {
       activeType = 'before-after';
-    } else if (lower.includes('histoire') || lower.includes('comment j') || lower.includes('mon ') || lower.includes('déclic')) {
+    } else if (lower.includes('histoire') || lower.includes('déclic') || lower.includes('récit')) {
       activeType = 'story-pov';
-    } else if (lower.includes('secret') || lower.includes('outil') || lower.includes('astuce') || lower.includes('personne')) {
+    } else if (lower.includes('secret') || lower.includes('conseil') || lower.includes('astuce')) {
       activeType = 'secret-list';
     } else {
       activeType = 'framework-system';
@@ -462,15 +539,15 @@ export function buildSmartAICarousel(params: {
   switch (activeType) {
     case 'myth-buster':
       coverKicker = 'MYTHE VS RÉALITÉ';
-      coverTitle = `Tout ce qu’on t’a dit sur *${cleanTopic.toLowerCase()}* est faux. Voici la réalité.`;
-      coverSubtitle = 'Pourquoi 95% des gens appliquent la mauvaise méthode — et par quoi la remplacer.';
-      hookStrategy = 'Dissonance cognitive (Mythe vs Réalité)';
+      coverTitle = `Sur *${cleanTopic.toLowerCase()}*, une idée reçue mérite d’être vérifiée.`;
+      coverSubtitle = 'Voici comment distinguer le raccourci séduisant de la méthode réellement adaptée.';
+      hookStrategy = 'Contraste nuancé, sans chiffre non sourcé';
       break;
     case 'stats-proof':
-      coverKicker = 'ÉTUDE & CHIFFRES CLÉS';
-      coverTitle = `J’ai analysé ce qui marche vraiment en *${cleanTopic.toLowerCase()}*. Voici les preuves.`;
-      coverSubtitle = 'Les chiffres, les lois invisibles et le protocole exact en 6 slides.';
-      hookStrategy = 'Autorité par la donnée chiffrée';
+      coverKicker = 'DONNÉES & PREUVES';
+      coverTitle = `Les indicateurs qui comptent vraiment en *${cleanTopic.toLowerCase()}*.`;
+      coverSubtitle = 'Un cadre clair pour séparer les signaux utiles des chiffres décoratifs. Ajoute tes sources avant publication.';
+      hookStrategy = 'Preuve vérifiable et contexte avant le chiffre';
       break;
     case 'before-after':
       coverKicker = 'TRANSFORMATION';
@@ -480,65 +557,104 @@ export function buildSmartAICarousel(params: {
       break;
     case 'story-pov':
       coverKicker = 'RÉCIT & DÉCLIC';
-      coverTitle = `Ce simple déclic sur *${cleanTopic.toLowerCase()}* a changé tous mes résultats.`;
-      coverSubtitle = 'L’erreur qui me bloquait au départ et les 3 règles qui ont tout débloqué.';
-      hookStrategy = 'Storytelling immersif & empathie';
+      coverTitle = `Le moment où *${cleanTopic.toLowerCase()}* devient plus simple à comprendre.`;
+      coverSubtitle = 'Un obstacle, une prise de recul et une leçon concrète à illustrer avec ta propre expérience.';
+      hookStrategy = 'Storytelling guidé, à ancrer dans une expérience réelle';
       break;
     case 'secret-list':
-      coverKicker = 'LES SECRETS BIEN GARDÉS';
-      coverTitle = `Les 5 règles sur *${cleanTopic.toLowerCase()}* que 99% des gens découvrent trop tard.`;
-      coverSubtitle = 'Enregistre ce carrousel avant de scroller : chaque slide est une pépite.';
-      hookStrategy = 'Curiosity Gap & Exclusivité';
+      coverKicker = 'CONSEILS À GARDER';
+      coverTitle = `Des pistes concrètes pour progresser en *${cleanTopic.toLowerCase()}*.`;
+      coverSubtitle = 'Une sélection à parcourir, adapter à ta situation et enregistrer pour plus tard.';
+      hookStrategy = 'Curiosité utile et promesse précise';
+      break;
+    case 'diagnostic-audit':
+      coverKicker = 'AUTO-DIAGNOSTIC EXPRESS';
+      coverTitle = `Où en es-tu vraiment avec *${cleanTopic.toLowerCase()}* ?`;
+      coverSubtitle = 'Fais le point en quelques questions, identifie ton frein principal et choisis une action.';
+      hookStrategy = 'Question de diagnostic orientée vers une action';
+      break;
+    case 'seven-day-plan':
+      coverKicker = 'CHALLENGE · 7 JOURS';
+      coverTitle = `7 jours pour passer de *l’intention à l’habitude* en ${cleanTopic.toLowerCase()}.`;
+      coverSubtitle = 'Une petite action par jour, un rythme réaliste et un bilan pour continuer.';
+      hookStrategy = 'Engagement progressif et résultat contrôlable';
+      break;
+    case 'case-study':
+      coverKicker = 'ÉTUDE DE CAS · DÉCOMPOSITION';
+      coverTitle = `Comment aborder *${cleanTopic.toLowerCase()}* sans confondre récit et preuve.`;
+      coverSubtitle = 'Contexte, décision, méthode et éléments à documenter — sans inventer de résultats.';
+      hookStrategy = 'Curiosité narrative, puis preuves contextualisées';
+      break;
+    case 'resource-kit':
+      coverKicker = 'KIT PRATIQUE À SAUVEGARDER';
+      coverTitle = `Le kit de départ pour *${cleanTopic.toLowerCase()}* — prêt à adapter.`;
+      coverSubtitle = 'Une mini-méthode, une checklist et des actions concrètes à réutiliser.';
+      hookStrategy = 'Utilité immédiate et promesse de ressource';
+      break;
+    case 'decision-path':
+      coverKicker = 'GUIDE DE DÉCISION';
+      coverTitle = `Quel chemin choisir pour *${cleanTopic.toLowerCase()}* ?`;
+      coverSubtitle = 'Quelques questions simples pour clarifier ta situation et décider de la prochaine étape.';
+      hookStrategy = 'Question de choix et réduction de l’incertitude';
       break;
     case 'framework-system':
     default:
       coverKicker = 'SYSTÈME & MÉTHODE';
-      coverTitle = `La méthode complète pour maîtriser *${cleanTopic.toLowerCase()}* étape par étape.`;
-      coverSubtitle = 'Condensé en 6 slides illustrées simples, concrètes et prêtes à appliquer.';
-      hookStrategy = 'Promesse de système sauvegardable (Aimant à Saves)';
+      coverTitle = `La méthode pour progresser en *${cleanTopic.toLowerCase()}*, étape par étape.`;
+      coverSubtitle = 'Un parcours court : comprendre, agir, vérifier et garder les étapes utiles.';
+      hookStrategy = 'Promesse de système clair et actionnable';
       break;
   }
 
   const slide1Text = `${coverTitle} ${rawTopic}`;
-  const slide2Title = matchedNiche
-    ? matchedNiche.statTitle
-    : `En *${cleanTopic.toLowerCase()}*, un seul levier concentre l’essentiel de l’impact.`;
-  const slide2Subtitle = matchedNiche
-    ? matchedNiche.statSubtitle
-    : params.webSnippet ||
-      `Ceux qui obtiennent des résultats exceptionnels sur ${cleanTopic.toLowerCase()} ne travaillent pas plus : ils verrouillent les bonnes fondations dès le départ.`;
+  const slide2Title =
+    activeType === 'stats-proof'
+      ? `Une preuve utile commence par une question précise sur *${cleanTopic.toLowerCase()}*.`
+      : `Le levier à comprendre en premier pour progresser en *${cleanTopic.toLowerCase()}*.`;
+  const slide2Subtitle =
+    activeType === 'stats-proof'
+      ? params.webSnippet || 'Ajoute une donnée vérifiable, sa source, sa période et son contexte avant publication.'
+      : params.webSnippet || `Commence par observer la situation actuelle, puis choisis un indicateur ou un signe concret pour suivre ton progrès.`;
 
-  const slide3Title = matchedNiche
-    ? matchedNiche.mythTitle
-    : `L’erreur classique vs *La méthode gagnante*`;
-  const slide3Left = matchedNiche
-    ? matchedNiche.mythWrong
-    : `Improviser au jour le jour sur ${cleanTopic.toLowerCase()} en copiant les méthodes compliquées de tout le monde.`;
-  const slide3Right = matchedNiche
-    ? matchedNiche.mythRight
-    : `Appliquer un système épuré en 3 étapes, mesurable et régulier chaque semaine.`;
+  const slide3Title =
+    activeType === 'stats-proof'
+      ? 'Indicateur de vanité vs *signal utile*'
+      : matchedNiche?.mythTitle || 'Approche habituelle vs *méthode plus claire*';
+  const slide3Left =
+    activeType === 'stats-proof'
+      ? 'Un chiffre isolé, sans objectif, source ni période de comparaison.'
+      : matchedNiche?.mythWrong || `Improviser sur ${cleanTopic.toLowerCase()} sans définir le résultat attendu.`;
+  const slide3Right =
+    activeType === 'stats-proof'
+      ? 'Une mesure définie, reliée à une décision et accompagnée de son contexte.'
+      : matchedNiche?.mythRight || 'Choisir une action simple, la suivre et l’ajuster selon les retours.';
 
-  const slide4Title = matchedNiche
-    ? matchedNiche.step1Title
-    : `Élimine 80% du bruit pour *tripler ta vitesse* sur ${cleanTopic.toLowerCase()}.`;
-  const slide4Subtitle = matchedNiche
-    ? matchedNiche.step1Subtitle
-    : `La simplicité est le raccourci ultime : concentre toute ton attention sur l’action qui produit un résultat visible dès les premières 48 heures.`;
+  const slide4Title =
+    activeType === 'stats-proof'
+      ? 'Donne au lecteur les éléments pour *interpréter la preuve*.'
+      : matchedNiche?.step1Title || `Le premier geste concret pour avancer sur *${cleanTopic.toLowerCase()}*.`;
+  const slide4Subtitle =
+    activeType === 'stats-proof'
+      ? 'Précise la source, la date, l’échantillon et ce que le résultat permet — ou ne permet pas — de conclure.'
+      : matchedNiche?.step1Subtitle || 'Décris une action observable, son déclencheur et le prochain signe de progrès à surveiller.';
 
-  const slide5Title = matchedNiche
-    ? matchedNiche.checklistTitle
-    : `Les *3 règles d’or* à enregistrer sur ${cleanTopic.toLowerCase()}`;
-  const slide5Bullets = matchedNiche
-    ? matchedNiche.checklistItems
-    : [
-        `Fixer *un seul objectif mesurable* avant chaque session dédiée à ${cleanTopic.toLowerCase()}`,
-        `Remplacer l’improvisation par *un rituel simple et répétable*`,
-        `Analyser ce qui a donné *le plus de résultats* tous les 7 jours`,
-      ];
+  const slide5Title =
+    activeType === 'stats-proof'
+      ? 'La checklist d’une preuve *crédible et réutilisable*'
+      : matchedNiche?.checklistTitle || `Les gestes à retenir pour *${cleanTopic.toLowerCase()}*`;
+  const slide5Bullets =
+    activeType === 'stats-proof'
+      ? ['Citer une source primaire et une date', 'Donner le contexte et la méthode de mesure', 'Séparer le fait observé de ton interprétation']
+      : matchedNiche?.checklistItems || [
+          `Définir un objectif simple pour ${cleanTopic.toLowerCase()}`,
+          'Remplacer l’improvisation par une action répétable',
+          'Observer le résultat et ajuster la prochaine étape',
+        ];
 
-  const slide6Quote = matchedNiche
-    ? matchedNiche.quoteText
-    : `« En *${cleanTopic.toLowerCase()}*, la constance dans la simplicité bat toujours l’intensité dans la complexité. »`;
+  const slide6Quote =
+    activeType === 'stats-proof'
+      ? 'Une donnée n’explique rien seule : le contexte lui donne son sens.'
+      : matchedNiche?.quoteText || `« Pour progresser en ${cleanTopic.toLowerCase()}, rends la prochaine étape assez claire pour pouvoir la refaire. »`;
 
   const rawSlides: SlideItem[] = [
     {
@@ -554,15 +670,15 @@ export function buildSmartAICarousel(params: {
     {
       id: `ai-s2-${Date.now()}`,
       layout: 'big-stat',
-      kicker: '01 — LE CONSTAT CHIFFRÉ',
+      kicker: activeType === 'stats-proof' ? '01 — LA PREUVE' : '01 — LE PRINCIPE',
       title: slide2Title,
       subtitle: slide2Subtitle,
-      statValue: matchedNiche ? matchedNiche.statValue : '80/20',
-      statLabel: matchedNiche
-        ? matchedNiche.statLabel
-        : `80% des résultats en ${cleanTopic.toLowerCase()} viennent de 20% d’actions clés bien ciblées.`,
+      statValue: activeType === 'stats-proof' ? 'SOURCE' : '01',
+      statLabel: activeType === 'stats-proof'
+        ? 'Ajoute une source vérifiable, une date et le contexte de la mesure.'
+        : slide2Subtitle,
       body: '',
-      illustrationId: matchIllustrationToText(slide2Title + ' ' + (matchedNiche?.statLabel || ''), 1),
+      illustrationId: matchIllustrationToText(slide2Title, 1),
       swipePrompt: 'L’erreur à éviter →',
     },
     {
@@ -572,9 +688,9 @@ export function buildSmartAICarousel(params: {
       title: slide3Title,
       subtitle: '',
       body: '',
-      comparisonLeftTitle: 'Ce que 90% font',
+      comparisonLeftTitle: 'Réflexe courant',
       comparisonLeftText: slide3Left,
-      comparisonRightTitle: 'Ce qui marche vraiment',
+      comparisonRightTitle: 'Approche à tester',
       comparisonRightText: slide3Right,
       illustrationId: 'scale-justice',
       swipePrompt: 'La méthode →',
@@ -612,6 +728,252 @@ export function buildSmartAICarousel(params: {
     },
   ];
 
+  let finalSlides: SlideItem[] = rawSlides;
+  const createdAt = Date.now();
+
+  if (activeType === 'diagnostic-audit') {
+    finalSlides = [
+      rawSlides[0],
+      {
+        ...rawSlides[1],
+        id: `ai-audit-${createdAt}-1`,
+        layout: 'numbered-insight',
+        kicker: '01 — CLARIFIE TON OBJECTIF',
+        title: `Quel résultat veux-tu améliorer en *${cleanTopic.toLowerCase()}* ?`,
+        subtitle: 'Formule-le en une phrase observable : qu’est-ce qui devrait être différent ?',
+        statValue: undefined,
+        statLabel: undefined,
+        illustrationId: 'target-arrow',
+      },
+      {
+        ...rawSlides[2],
+        id: `ai-audit-${createdAt}-2`,
+        title: 'Sépare le symptôme de *la cause*',
+        comparisonLeftTitle: 'Ce que tu vois',
+        comparisonLeftText: `Décris le blocage visible dans ${cleanTopic.toLowerCase()}.`,
+        comparisonRightTitle: 'Ce qui le provoque',
+        comparisonRightText: 'Repère l’habitude, l’étape ou la contrainte qui revient le plus souvent.',
+        illustrationId: 'scale-justice',
+      },
+      {
+        ...rawSlides[3],
+        id: `ai-audit-${createdAt}-3`,
+        kicker: '03 — TROUVE LE FREIN',
+        title: 'Choisis le point de friction que tu peux vraiment *influencer*.',
+        subtitle: 'Commence par le problème le plus concret, pas par une refonte totale.',
+        illustrationId: 'compass-plane',
+      },
+      {
+        ...rawSlides[4],
+        id: `ai-audit-${createdAt}-4`,
+        kicker: '04 — TON AUTO-AUDIT',
+        title: 'Quatre questions pour passer à l’action',
+        bulletPoints: [
+          'Mon objectif est-il clairement formulé ?',
+          'Quelle étape me ralentit le plus souvent ?',
+          'Quel petit test puis-je faire cette semaine ?',
+          'Quel signal me dira si le test aide vraiment ?',
+        ],
+        illustrationId: 'brain-synapse',
+      },
+      {
+        ...rawSlides[5],
+        id: `ai-audit-${createdAt}-5`,
+        title: 'Une friction repérée. Une action à tester.',
+        subtitle: 'Enregistre cet audit, applique un changement simple et reviens comparer ton point de départ.',
+        illustrationId: 'trophy-laurel',
+      },
+    ];
+  } else if (activeType === 'seven-day-plan') {
+    const days = [
+      ['Définis un objectif réaliste.', 'Écris ce que tu veux améliorer et comment tu le constateras.'],
+      ['Observe ton point de départ.', 'Note ce que tu fais aujourd’hui, sans chercher à tout changer.'],
+      ['Choisis une seule priorité.', 'Écarte les tâches secondaires et garde l’action la plus utile.'],
+      ['Prépare ton environnement.', 'Rends l’action facile à commencer : matériel, créneau et rappel.'],
+      ['Répète et ajuste.', 'Teste la même action, puis note ce qui aide ou bloque.'],
+      ['Demande un retour ciblé.', 'Fais relire ton résultat par une personne qui connaît le sujet.'],
+      ['Fais le bilan et choisis la suite.', 'Garde ce qui a fonctionné, ajuste le reste et planifie ton prochain cycle.'],
+    ];
+    finalSlides = [
+      rawSlides[0],
+      ...days.map(([title, subtitle], index): SlideItem => ({
+        id: `ai-seven-day-${createdAt}-${index + 1}`,
+        layout: index === days.length - 1 ? 'cta-outro' : 'numbered-insight',
+        kicker: `JOUR ${String(index + 1).padStart(2, '0')} / 07`,
+        title: `Jour ${index + 1} — ${title}`,
+        subtitle: index === days.length - 1
+          ? `${subtitle} Enregistre le plan pour le refaire à ton rythme.`
+          : subtitle,
+        body: '',
+        illustrationId: matchIllustrationToText(`${title} ${subtitle}`, index + 1),
+        swipePrompt: index === days.length - 1 ? 'Garder le plan 📌' : 'Jour suivant →',
+      })),
+    ];
+  } else if (activeType === 'stats-proof') {
+    finalSlides = [
+      { ...rawSlides[0] },
+      {
+        ...rawSlides[1],
+        id: `ai-proof-${createdAt}-1`,
+        statValue: 'KPI',
+        statLabel: 'Ajoute une source vérifiable, une date et le contexte de la mesure.',
+        subtitle: params.webSnippet || 'Une preuve utile répond à une question précise et vérifiable.',
+        illustrationId: 'network-nodes',
+      },
+      { ...rawSlides[2], id: `ai-proof-${createdAt}-2` },
+      { ...rawSlides[3], id: `ai-proof-${createdAt}-3` },
+      { ...rawSlides[4], id: `ai-proof-${createdAt}-4` },
+      { ...rawSlides[5], id: `ai-proof-${createdAt}-5` },
+    ];
+  } else if (activeType === 'case-study') {
+    finalSlides = [
+      rawSlides[0],
+      {
+        ...rawSlides[1],
+        id: `ai-case-${createdAt}-1`,
+        layout: 'numbered-insight',
+        kicker: '01 — CONTEXTE À RENSEIGNER',
+        title: 'Le point de départ : *qui, quoi, quand ?*',
+        subtitle: 'Décris la situation initiale avec les faits dont tu disposes. Ne transforme pas une hypothèse en témoignage.',
+        statValue: undefined,
+        statLabel: undefined,
+        illustrationId: 'compass-plane',
+      },
+      {
+        ...rawSlides[2],
+        id: `ai-case-${createdAt}-2`,
+        title: 'La décision qui change la méthode',
+        comparisonLeftTitle: 'Avant',
+        comparisonLeftText: 'Quelle approche était utilisée et où se situait sa limite ?',
+        comparisonRightTitle: 'Choix retenu',
+        comparisonRightText: 'Quelle action a été choisie, et pourquoi était-elle adaptée au contexte ?',
+      },
+      {
+        ...rawSlides[3],
+        id: `ai-case-${createdAt}-3`,
+        kicker: '03 — DÉROULÉ',
+        title: `Comment la méthode a été appliquée à *${cleanTopic.toLowerCase()}*.`,
+        subtitle: 'Décris les étapes dans l’ordre, avec les contraintes et décisions importantes.',
+        illustrationId: 'steps-pyramid',
+      },
+      {
+        ...rawSlides[4],
+        id: `ai-case-${createdAt}-4`,
+        kicker: '04 — PREUVES À AJOUTER',
+        title: 'Documente le résultat avant de conclure',
+        bulletPoints: [
+          'Indicateur de départ et période observée',
+          'Résultat obtenu, source et date de vérification',
+          'Limites de l’exemple et conditions de reproductibilité',
+        ],
+        illustrationId: 'brain-synapse',
+      },
+      {
+        ...rawSlides[5],
+        id: `ai-case-${createdAt}-5`,
+        title: 'La leçon utile — sans surpromesse.',
+        subtitle: 'Présente ce qui est réutilisable, ce qui dépend du contexte et la prochaine étape à tester.',
+      },
+    ];
+  } else if (activeType === 'resource-kit') {
+    finalSlides = [
+      rawSlides[0],
+      {
+        ...rawSlides[1],
+        id: `ai-kit-${createdAt}-1`,
+        layout: 'numbered-insight',
+        kicker: '01 — LE BRIEF',
+        title: 'Définis le résultat avant de commencer.',
+        subtitle: `Pour ${cleanTopic.toLowerCase()}, écris l’objectif, la personne visée et le prochain geste attendu.`,
+        statValue: undefined,
+        statLabel: undefined,
+        illustrationId: 'target-arrow',
+      },
+      {
+        ...rawSlides[3],
+        id: `ai-kit-${createdAt}-2`,
+        kicker: '02 — LA STRUCTURE',
+        title: 'Une progression facile à suivre.',
+        subtitle: 'Accroche → idée utile → exemple → action → récapitulatif à sauvegarder.',
+        illustrationId: 'steps-pyramid',
+      },
+      {
+        ...rawSlides[4],
+        id: `ai-kit-${createdAt}-3`,
+        kicker: '03 — CHECKLIST',
+        title: 'Vérifie chaque slide avant publication',
+        bulletPoints: [
+          'Une seule idée principale par slide',
+          'Un exemple concret ou une illustration pertinente',
+          'Texte lisible dans la zone de sécurité',
+          'Une action simple à la fin du carrousel',
+        ],
+        illustrationId: 'creative-desk',
+      },
+      {
+        ...rawSlides[3],
+        id: `ai-kit-${createdAt}-4`,
+        kicker: '04 — À RÉUTILISER',
+        title: 'Garde une version de ce mini-plan.',
+        subtitle: 'Remplace les exemples par tes mots, tes visuels et tes données vérifiées.',
+        illustrationId: 'book-fountain',
+      },
+      {
+        ...rawSlides[5],
+        id: `ai-kit-${createdAt}-5`,
+        title: 'Enregistre le kit. Puis passe à la création.',
+        subtitle: 'Tu peux reprendre cette structure pour ton prochain carrousel.',
+      },
+    ];
+  } else if (activeType === 'decision-path') {
+    finalSlides = [
+      rawSlides[0],
+      {
+        ...rawSlides[1],
+        id: `ai-path-${createdAt}-1`,
+        layout: 'numbered-insight',
+        kicker: '01 — QUESTION DE DÉPART',
+        title: `Quel est ton objectif prioritaire avec *${cleanTopic.toLowerCase()}* ?`,
+        subtitle: 'Choisis une seule priorité avant de comparer les options.',
+        statValue: undefined,
+        statLabel: undefined,
+        illustrationId: 'compass-plane',
+      },
+      {
+        ...rawSlides[2],
+        id: `ai-path-${createdAt}-2`,
+        title: 'As-tu déjà une base à améliorer ?',
+        comparisonLeftTitle: 'Pas encore',
+        comparisonLeftText: 'Commence par une version simple, un public précis et un test limité.',
+        comparisonRightTitle: 'Oui, déjà',
+        comparisonRightText: 'Analyse le retour le plus utile et améliore une seule étape.',
+        illustrationId: 'scale-justice',
+      },
+      {
+        ...rawSlides[3],
+        id: `ai-path-${createdAt}-3`,
+        kicker: '03 — SI TU DÉBUTES',
+        title: 'Réduis le choix à une *première action*.',
+        subtitle: 'Prends l’option la plus facile à tester cette semaine et observe le résultat.',
+        illustrationId: 'steps-pyramid',
+      },
+      {
+        ...rawSlides[3],
+        id: `ai-path-${createdAt}-4`,
+        kicker: '04 — SI TU AS DÉJÀ TESTÉ',
+        title: 'Garde le signal utile. Retire le reste.',
+        subtitle: 'Compare avec ton objectif, puis modifie une variable à la fois.',
+        illustrationId: 'target-arrow',
+      },
+      {
+        ...rawSlides[5],
+        id: `ai-path-${createdAt}-5`,
+        title: 'Choisis une voie. Teste-la. Réévalue.',
+        subtitle: 'Enregistre ce guide et reviens-y après ton prochain test.',
+      },
+    ];
+  }
+
   const usedIds = new Set<string>();
   const fallbacks = [
     'stairway-sun',
@@ -623,7 +985,7 @@ export function buildSmartAICarousel(params: {
     'lotus-mind',
     'hands-spark',
   ];
-  rawSlides.forEach((sl, idx) => {
+  finalSlides.forEach((sl, idx) => {
     if (sl.illustrationId && usedIds.has(sl.illustrationId)) {
       const replacement =
         fallbacks.find((f) => !usedIds.has(f)) || fallbacks[idx % fallbacks.length];
@@ -634,7 +996,11 @@ export function buildSmartAICarousel(params: {
 
   const typeObj =
     CAROUSEL_TYPES.find((t) => t.id === activeType) || CAROUSEL_TYPES[1];
-  const chosenStyle = params.visualStyle || matchedNiche?.recommendedStyle || 'skale-pinned-notes';
+  const chosenStyle =
+    params.visualStyle ||
+    matchedNiche?.recommendedStyle ||
+    typeObj.recommendedVisualStyle ||
+    'studio-grid-system';
   const styleObj =
     VISUAL_STYLES.find((s) => s.id === chosenStyle) || VISUAL_STYLES[0];
 
@@ -658,8 +1024,8 @@ export function buildSmartAICarousel(params: {
     showSwipeIndicator: true,
     showSlideNumbers: true,
     respectSafeZones: true,
-    slides: rawSlides,
-    caption: `${coverTitle.replace(/\*/g, '')}\n\n${coverSubtitle}\n\nDans ce carrousel sur ${cleanTopic.toLowerCase()} :\n01. ${slide2Title.replace(/\*/g, '')}\n02. ${slide3Title.replace(/\*/g, '')}\n03. ${slide4Title.replace(/\*/g, '')}\n04. ${slide5Title.replace(/\*/g, '')}\n\n📌 Enregistre ce post en favoris pour y revenir plus tard !`,
+    slides: finalSlides,
+    caption: `${coverTitle.replace(/\*/g, '')}\n\n${coverSubtitle}\n\nDans ce carrousel sur ${cleanTopic.toLowerCase()} :\n01. ${slide2Title.replace(/\*/g, '')}\n02. ${slide3Title.replace(/\*/g, '')}\n03. ${slide4Title.replace(/\*/g, '')}\n04. ${slide5Title.replace(/\*/g, '')}\n\n📌 Enregistre ce post en favoris pour y revenir plus tard.${matchedNiche?.captionNote ? `\n\n${matchedNiche.captionNote}` : ''}`,
     hashtags: [
       `#${cleanTopic.toLowerCase().replace(/[^a-z0-9]/gi, '').slice(0, 16) || 'carrousel'}`,
       '#carrousel',

@@ -2,16 +2,22 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
+  BookOpen,
   Check,
+  CheckCircle2,
   ChevronDown,
   Copy,
   Download,
+  FolderOpen,
   Image as ImageIcon,
+  LayoutDashboard,
   LayoutGrid,
   Palette,
   Plus,
   RotateCcw,
+  Save,
   Search,
+  ShieldCheck,
   Sparkles,
   Trash2,
   Type,
@@ -45,7 +51,8 @@ import {
 import { SlideCanvas } from './components/SlideCanvas';
 import {
   downloadAllSlidesZip,
-  downloadSingleSlidePng,
+  downloadSingleSlideImage,
+  ImageExportFormat,
 } from './utils/exportImages';
 
 const ACCENT_SWATCHES = [
@@ -77,10 +84,44 @@ const QUICK_IDEAS = [
   'Utiliser l’IA pour gagner du temps',
 ];
 
+type StudioPage = 'studio' | 'templates' | 'projects';
+interface SavedProject {
+  id: string;
+  name: string;
+  updatedAt: string;
+  project: CarouselProject;
+}
+
+const DRAFT_STORAGE_KEY = 'atelier-carousel-draft-v2';
+const PROJECTS_STORAGE_KEY = 'atelier-carousel-projects-v2';
+
+function readDraft(): CarouselProject {
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(DRAFT_STORAGE_KEY) : null;
+    if (raw) {
+      const saved = JSON.parse(raw) as CarouselProject;
+      if (saved?.slides?.length && saved.formatId && saved.themeId) return saved;
+    }
+  } catch {
+    // Start with the included example when local storage is unavailable.
+  }
+  return JSON.parse(JSON.stringify(PRESET_CAROUSELS[0])) as CarouselProject;
+}
+
+function readSavedProjects(): SavedProject[] {
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(PROJECTS_STORAGE_KEY) : null;
+    const saved = raw ? JSON.parse(raw) : [];
+    return Array.isArray(saved) ? saved.filter((item) => item?.project?.slides?.length) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function App() {
-  const [project, setProject] = useState<CarouselProject>(() => PRESET_CAROUSELS[0]);
+  const [project, setProject] = useState<CarouselProject>(readDraft);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-  const [topicInput, setTopicInput] = useState('');
+  const [topicInput, setTopicInput] = useState(() => project.topic || '');
   const [carouselType, setCarouselType] = useState<CarouselTypeId>('auto-smart');
   const [activeTab, setActiveTab] = useState<StudioTab>('design');
   const [illustrationCategory, setIllustrationCategory] = useState<string>('Toutes');
@@ -90,6 +131,12 @@ export function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState('');
   const [captionCopied, setCaptionCopied] = useState(false);
+  const [activePage, setActivePage] = useState<StudioPage>('studio');
+  const [savedProjects, setSavedProjects] = useState<SavedProject[]>(readSavedProjects);
+  const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | 'unavailable'>('saved');
+  const [imageFormat, setImageFormat] = useState<ImageExportFormat>('png');
+  const [showSafeZones, setShowSafeZones] = useState(false);
+  const [toast, setToast] = useState('');
 
   useEffect(() => {
     const updateViewport = () => setViewportWidth(window.innerWidth);
@@ -97,6 +144,27 @@ export function App() {
     window.addEventListener('resize', updateViewport);
     return () => window.removeEventListener('resize', updateViewport);
   }, []);
+
+  useEffect(() => {
+    setSaveStatus('saving');
+    const timeout = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(project));
+        setSaveStatus('saved');
+      } catch {
+        setSaveStatus('unavailable');
+      }
+    }, 450);
+    return () => window.clearTimeout(timeout);
+  }, [project]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(savedProjects));
+    } catch {
+      // Draft editing remains available even when the browser blocks storage.
+    }
+  }, [savedProjects]);
 
   const format =
     PLATFORM_FORMATS.find((item) => item.id === project.formatId) ||
@@ -112,6 +180,12 @@ export function App() {
   const activeAccent = project.customAccentColor || theme.accent;
   const activeBackground = project.customBgColor || theme.bgPrimary;
   const currentSlide = project.slides[activeSlideIndex] || project.slides[0];
+  const maxSlides = project.formatId === 'tiktok-9-16' ? 35 : 20;
+  const pageMeta = {
+    studio: { title: 'Studio de création', subtitle: 'Crée, ajuste et exporte ton prochain carrousel.' },
+    templates: { title: 'Bibliothèque de modèles', subtitle: 'Choisis une structure éditoriale ; le studio prépare un premier jet.' },
+    projects: { title: 'Mes projets', subtitle: 'Tes carrousels sauvegardés sur cet appareil.' },
+  }[activePage];
 
   const previewWidth = Math.min(
     viewportWidth < 1280 ? viewportWidth * 0.8 : viewportWidth * 0.56,
@@ -194,7 +268,8 @@ export function App() {
 
   const runAIGeneration = async (
     requestedTopic: string,
-    requestedType: CarouselTypeId = carouselType
+    requestedType: CarouselTypeId = carouselType,
+    requestedStyle: VisualStyleId = visualStyle
   ) => {
     const cleanTopic = requestedTopic.trim();
     if (!cleanTopic || isGenerating) return;
@@ -206,7 +281,7 @@ export function App() {
       const generated = buildSmartAICarousel({
         topic: cleanTopic,
         carouselType: requestedType,
-        visualStyle,
+        visualStyle: requestedStyle,
         formatId: project.formatId,
         themeId: project.themeId,
         fontPairingId: project.fontPairingId,
@@ -217,12 +292,15 @@ export function App() {
 
       setProject({
         ...generated,
-        visualStyle,
+        visualStyle: requestedStyle,
         customAccentColor: project.customAccentColor,
         customBgColor: project.customBgColor,
       });
       setActiveSlideIndex(0);
       setActiveTab('design');
+    } catch {
+      setToast('La génération a échoué. Réessaie avec un autre sujet.');
+      window.setTimeout(() => setToast(''), 2600);
     } finally {
       setIsGenerating(false);
     }
@@ -231,6 +309,66 @@ export function App() {
   const handleGenerateSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void runAIGeneration(topicInput);
+  };
+
+  const handleUseTemplate = (template: (typeof CAROUSEL_TYPES)[number]) => {
+    setCarouselType(template.id);
+    setActivePage('studio');
+    setTopicInput(template.sampleTopic);
+    void runAIGeneration(template.sampleTopic, template.id, template.recommendedVisualStyle);
+  };
+
+  const handleNewProject = () => {
+    const freshProject = JSON.parse(JSON.stringify(PRESET_CAROUSELS[0])) as CarouselProject;
+    freshProject.id = `draft-${Date.now()}`;
+    freshProject.title = 'Nouvelle création';
+    freshProject.topic = '';
+    setProject(freshProject);
+    setTopicInput('');
+    setCarouselType('auto-smart');
+    setActiveSlideIndex(0);
+    setActiveTab('design');
+    setActivePage('studio');
+  };
+
+  const handleSaveProject = () => {
+    const snapshot = JSON.parse(JSON.stringify(project)) as CarouselProject;
+    const saved: SavedProject = {
+      id: project.id,
+      name: project.title || project.topic || 'Carrousel sans titre',
+      updatedAt: new Date().toISOString(),
+      project: snapshot,
+    };
+    setSavedProjects((previous) => [saved, ...previous.filter((item) => item.id !== saved.id)].slice(0, 40));
+    setToast('Projet enregistré sur cet appareil');
+    window.setTimeout(() => setToast(''), 2200);
+  };
+
+  const handleOpenSavedProject = (saved: SavedProject) => {
+    setProject(JSON.parse(JSON.stringify(saved.project)) as CarouselProject);
+    setTopicInput(saved.project.topic || '');
+    setCarouselType(saved.project.carouselType || 'auto-smart');
+    setActiveSlideIndex(0);
+    setActivePage('studio');
+    setActiveTab('design');
+  };
+
+  const handleDuplicateSavedProject = (saved: SavedProject) => {
+    const duplicate = JSON.parse(JSON.stringify(saved.project)) as CarouselProject;
+    duplicate.id = `copy-${Date.now()}`;
+    duplicate.title = `${saved.name} — copie`;
+    setProject(duplicate);
+    setTopicInput(duplicate.topic || '');
+    setCarouselType(duplicate.carouselType || 'auto-smart');
+    setActiveSlideIndex(0);
+    setActivePage('studio');
+    setActiveTab('design');
+    setToast('Copie prête à modifier');
+    window.setTimeout(() => setToast(''), 2200);
+  };
+
+  const handleDeleteSavedProject = (id: string) => {
+    setSavedProjects((previous) => previous.filter((item) => item.id !== id));
   };
 
   const handleAutoIllustrations = () => {
@@ -251,6 +389,11 @@ export function App() {
   };
 
   const handleAddSlide = () => {
+    if (project.slides.length >= maxSlides) {
+      setToast(`Limite de ${maxSlides} slides pour ce format.`);
+      window.setTimeout(() => setToast(''), 2200);
+      return;
+    }
     const newIndex = activeSlideIndex + 1;
     const newSlide: SlideItem = {
       id: `slide-${Date.now()}`,
@@ -282,12 +425,13 @@ export function App() {
     if (!currentSlide) return;
     setIsExporting(true);
     try {
-      await downloadSingleSlidePng(
+      await downloadSingleSlideImage(
         project,
         currentSlide,
         activeSlideIndex,
         theme,
-        format
+        format,
+        imageFormat
       );
     } finally {
       setIsExporting(false);
@@ -297,9 +441,13 @@ export function App() {
   const handleDownloadAll = async () => {
     setIsExporting(true);
     try {
-      await downloadAllSlidesZip(project, theme, format, (current, total) => {
-        setExportProgress(`${current}/${total}`);
-      });
+      await downloadAllSlidesZip(
+        project,
+        theme,
+        format,
+        (current, total) => setExportProgress(`${current}/${total}`),
+        imageFormat
+      );
     } finally {
       setIsExporting(false);
       setExportProgress('');
@@ -336,63 +484,134 @@ export function App() {
   const tabs: { id: StudioTab; label: string; icon: React.ReactNode }[] = [
     { id: 'design', label: 'Design', icon: <Palette className="h-4 w-4" /> },
     { id: 'content', label: 'Texte', icon: <Type className="h-4 w-4" /> },
-    { id: 'illustrations', label: 'Illustrations', icon: <ImageIcon className="h-4 w-4" /> },
+    { id: 'illustrations', label: 'Visuels', icon: <ImageIcon className="h-4 w-4" /> },
+  ];
+  const navigation: { id: StudioPage; label: string; description: string; icon: React.ReactNode }[] = [
+    { id: 'studio', label: 'Studio', description: 'Éditeur', icon: <LayoutDashboard className="h-4 w-4" /> },
+    { id: 'templates', label: 'Modèles', description: '12 structures', icon: <BookOpen className="h-4 w-4" /> },
+    { id: 'projects', label: 'Mes projets', description: `${savedProjects.length} enregistrés`, icon: <FolderOpen className="h-4 w-4" /> },
   ];
 
   return (
-    <div className="min-h-screen bg-[#F4F1EA] text-[#211E1A]">
-      <header className="sticky top-0 z-30 border-b border-[#E8E2D8] bg-[#FBFAF7]/95 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1480px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white shadow-sm"
-              style={{ backgroundColor: activeAccent }}
-            >
-              A
-            </div>
-            <div className="min-w-0">
-              <h1 className="truncate text-sm font-bold tracking-tight">Atelier Carrousel</h1>
-              <p className="text-[11px] text-[#777168]">TikTok & Instagram · création simplifiée</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <label className="relative">
-              <span className="sr-only">Format du carrousel</span>
-              <select
-                value={project.formatId}
-                onChange={(event) => updateProject({ formatId: event.target.value as CarouselProject['formatId'] })}
-                className="h-10 max-w-[190px] appearance-none rounded-xl border border-[#E3DDD2] bg-white py-2 pl-3 pr-9 text-xs font-semibold text-[#29251F] outline-none transition focus:border-[#AFA79B]"
-              >
-                {PLATFORM_FORMATS.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name} · {item.aspectRatio}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#777168]" />
-            </label>
-            <button
-              onClick={() => void handleDownloadAll()}
-              disabled={isExporting}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#211E1A] px-3.5 text-xs font-semibold text-white transition hover:bg-[#413A33] disabled:cursor-wait disabled:opacity-60 sm:px-4"
-            >
-              <Download className="h-4 w-4" />
-              <span>{isExporting ? `Export ${exportProgress}` : 'Exporter le carrousel'}</span>
-            </button>
+    <div className="min-h-screen bg-[#F4F6F8] text-[#20252B] lg:flex">
+      <aside className="hidden w-[248px] shrink-0 flex-col bg-[#182028] px-4 py-5 text-[#EEF2F6] lg:flex">
+        <div className="flex items-center gap-3 px-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl text-base font-extrabold text-white" style={{ backgroundColor: activeAccent }}>A</div>
+          <div>
+            <p className="text-sm font-bold tracking-tight">Atelier</p>
+            <p className="text-[10px] text-[#A8B2BC]">CAROUSEL STUDIO</p>
           </div>
         </div>
-      </header>
+        <div className="mt-8 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#84909B]">Espace de travail</div>
+        <nav className="mt-2 space-y-1">
+          {navigation.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActivePage(item.id)}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${activePage === item.id ? 'bg-[#2A3641] text-white shadow-sm' : 'text-[#B7C0C8] hover:bg-[#222D36] hover:text-white'}`}
+            >
+              {item.icon}
+              <span className="min-w-0 flex-1 text-xs font-semibold">{item.label}</span>
+              <span className="text-[9px] text-[#8E9AA5]">{item.description}</span>
+            </button>
+          ))}
+        </nav>
+        <button
+          type="button"
+          onClick={handleNewProject}
+          className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-white px-3 text-xs font-semibold text-[#20252B] transition hover:bg-[#E9EEF2]"
+        >
+          <Plus className="h-4 w-4" /> Nouvelle création
+        </button>
+        <div className="mt-auto rounded-2xl border border-[#303B46] bg-[#202A33] p-3.5">
+          <div className="flex items-center gap-2 text-xs font-semibold"><CheckCircle2 className="h-4 w-4 text-emerald-400" /> Espace prêt</div>
+          <p className="mt-2 text-[10px] leading-relaxed text-[#A8B2BC]">Brouillon sauvegardé dans ce navigateur. 28 styles · 48 visuels.</p>
+        </div>
+      </aside>
 
-      <main className="mx-auto w-full max-w-[1480px] space-y-5 px-4 py-5 sm:px-6 sm:py-7">
+      <div className="min-w-0 flex-1">
+        <header className="sticky top-0 z-30 border-b border-[#E3E8ED] bg-white/95 px-4 py-3 backdrop-blur-xl sm:px-6">
+          <div className="mx-auto flex max-w-[1680px] flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold text-white lg:hidden" style={{ backgroundColor: activeAccent }}>A</div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium text-[#8A939B]">Atelier <span className="px-1">/</span> {activePage === 'studio' ? project.title || 'Nouveau carrousel' : pageMeta.title}</p>
+                <h1 className="truncate text-sm font-bold tracking-tight sm:text-base">{pageMeta.title}</h1>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <span className="hidden items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] text-[#7B858E] xl:inline-flex" title="Sauvegarde locale automatique">
+                {saveStatus === 'saved' ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <Save className="h-3.5 w-3.5" />}
+                {saveStatus === 'saving' ? 'Enregistrement…' : saveStatus === 'saved' ? 'Enregistré ici' : 'Sauvegarde indisponible'}
+              </span>
+              <label className="relative">
+                <span className="sr-only">Format du carrousel</span>
+                <select
+                  value={project.formatId}
+                  onChange={(event) => updateProject({ formatId: event.target.value as CarouselProject['formatId'] })}
+                  className="h-9 max-w-[175px] appearance-none rounded-lg border border-[#DCE2E7] bg-white py-2 pl-3 pr-8 text-[10px] font-semibold text-[#34404A] outline-none focus:border-[#8996A1] sm:text-xs"
+                >
+                  {PLATFORM_FORMATS.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.aspectRatio}</option>)}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8A939B]" />
+              </label>
+              <label className="relative">
+                <span className="sr-only">Format d’export</span>
+                <select
+                  value={imageFormat}
+                  onChange={(event) => setImageFormat(event.target.value as ImageExportFormat)}
+                  className="h-9 appearance-none rounded-lg border border-[#DCE2E7] bg-white py-2 pl-3 pr-7 text-xs font-bold uppercase text-[#34404A] outline-none focus:border-[#8996A1]"
+                >
+                  <option value="png">PNG</option>
+                  <option value="jpg">JPG</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-[#8A939B]" />
+              </label>
+              <button type="button" onClick={handleSaveProject} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#DCE2E7] bg-white px-3 text-[11px] font-semibold text-[#47535D] transition hover:bg-[#F4F6F8]">
+                <Save className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Enregistrer</span>
+              </button>
+              <button onClick={() => void handleDownloadAll()} disabled={isExporting} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#20252B] px-3.5 text-[11px] font-semibold text-white transition hover:bg-[#39434C] disabled:cursor-wait disabled:opacity-60 sm:px-4">
+                <Download className="h-3.5 w-3.5" />
+                <span>{isExporting ? `Export ${exportProgress}` : 'Exporter'}</span>
+              </button>
+            </div>
+          </div>
+          <nav className="mx-auto mt-3 grid max-w-[1680px] grid-cols-3 gap-1 rounded-xl bg-[#F0F3F5] p-1 lg:hidden">
+            {navigation.map((item) => (
+              <button key={item.id} type="button" onClick={() => setActivePage(item.id)} className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[11px] font-semibold ${activePage === item.id ? 'bg-white text-[#20252B] shadow-sm' : 'text-[#7B858E]'}`}>
+                {item.icon}<span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        </header>
+
+      {activePage === 'studio' && (
+      <main className="mx-auto w-full max-w-[1680px] space-y-5 px-4 py-5 sm:px-6 sm:py-7">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+          <label className="flex min-w-0 flex-1 items-center gap-3 sm:flex-none">
+            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8A939B]">Projet</span>
+            <input
+              value={project.title || ''}
+              onChange={(event) => updateProject({ title: event.target.value })}
+              aria-label="Nom du projet"
+              className="min-w-0 max-w-[380px] flex-1 border-b border-transparent bg-transparent py-1 text-sm font-semibold text-[#303A42] outline-none transition placeholder:text-[#9BA4AB] focus:border-[#95A2AD]"
+              placeholder="Nom du projet"
+            />
+          </label>
+          <p className="inline-flex items-center gap-1.5 text-[10px] text-[#77838C]">
+            {saveStatus === 'saved' ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <Save className="h-3.5 w-3.5" />}
+            {saveStatus === 'saving' ? 'Enregistrement…' : saveStatus === 'saved' ? 'Brouillon enregistré dans ce navigateur' : 'Sauvegarde locale indisponible'}
+          </p>
+        </div>
         <section className="rounded-[26px] border border-[#E6DFD4] bg-[#FBFAF7] p-4 shadow-[0_10px_36px_-28px_rgba(49,39,24,0.25)] sm:p-6">
           <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[#8B8174]">Ton studio créatif</p>
               <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Une idée suffit.</h2>
-              <p className="mt-1 text-sm text-[#70695F]">L’IA prépare le texte, la structure et les illustrations.</p>
+              <p className="mt-1 text-sm text-[#70695F]">Le moteur de création propose un texte, une structure et des illustrations à adapter.</p>
             </div>
-            <span className="hidden text-xs text-[#8B8174] sm:block">22 styles · 48 illustrations · PNG</span>
+            <span className="hidden text-xs text-[#8B8174] sm:block">28 styles · 48 illustrations · PNG / JPG</span>
           </div>
 
           <form onSubmit={handleGenerateSubmit} className="flex flex-col gap-2.5 lg:flex-row">
@@ -444,6 +663,7 @@ export function App() {
               </button>
             ))}
           </div>
+          <p className="mt-3 text-[10px] text-[#8B8174]">La recherche web apporte du contexte ; vérifie et cite les chiffres avant de publier.</p>
         </section>
 
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(340px,0.9fr)]">
@@ -452,7 +672,7 @@ export function App() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EEE9E1] px-4 py-3.5 sm:px-5">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8B8174]">Aperçu du carrousel</p>
-                  <p className="mt-0.5 text-sm font-semibold">Slide {activeSlideIndex + 1} <span className="font-normal text-[#8B8174]">sur {project.slides.length}</span></p>
+                  <p className="mt-0.5 text-sm font-semibold">Slide {activeSlideIndex + 1} <span className="font-normal text-[#8B8174]">/ {project.slides.length} · max {maxSlides}</span></p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -475,12 +695,21 @@ export function App() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setShowSafeZones((show) => !show)}
+                    title={format.safeZone.warningNote}
+                    className={`inline-flex h-9 items-center gap-1.5 rounded-xl border px-3 text-[11px] font-semibold transition ${showSafeZones ? 'border-[#9BB7D2] bg-[#EEF5FB] text-[#3C6487]' : 'border-[#E6DFD4] bg-white text-[#6D777F] hover:bg-[#F6F3ED]'}`}
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Zone sûre
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => void handleDownloadCurrent()}
                     disabled={isExporting}
-                    className="ml-1 inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#E6DFD4] bg-white px-3 text-xs font-semibold transition hover:bg-[#F6F3ED] disabled:opacity-50"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#E6DFD4] bg-white px-3 text-xs font-semibold transition hover:bg-[#F6F3ED] disabled:opacity-50"
                   >
                     <Download className="h-3.5 w-3.5" />
-                    PNG
+                    {imageFormat.toUpperCase()}
                   </button>
                 </div>
               </div>
@@ -496,6 +725,7 @@ export function App() {
                     theme={theme}
                     fontPairing={fontPairing}
                     scale={previewScale}
+                    showSafeZoneOverlay={showSafeZones}
                   />
                 ) : (
                   <div className="text-sm text-[#81766A]">Ajoute une slide pour commencer.</div>
@@ -504,11 +734,12 @@ export function App() {
 
               <div className="border-t border-[#EEE9E1] px-4 py-4 sm:px-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold text-[#655E55]">Tes slides</p>
+                  <p className="text-xs font-semibold text-[#655E55]">Storyboard <span className="ml-1 font-normal text-[#8B8174]">{project.slides.length} / {maxSlides}</span></p>
                   <button
                     type="button"
                     onClick={handleAddSlide}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition hover:bg-[#F1ECE3]"
+                    disabled={project.slides.length >= maxSlides}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition hover:bg-[#F1ECE3] disabled:cursor-not-allowed disabled:opacity-40"
                     style={{ color: activeAccent }}
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -948,9 +1179,111 @@ export function App() {
         </div>
 
         <footer className="pb-2 text-center text-[10px] text-[#978E83]">
-          Créé pour des carrousels TikTok Photo Mode & Instagram · Images haute résolution prêtes à exporter
+          TikTok Photo Mode & Instagram · Images haute résolution · PNG / JPG
         </footer>
       </main>
+      )}
+
+      {activePage === 'templates' && (
+        <main className="mx-auto w-full max-w-[1680px] space-y-5 px-4 py-5 sm:px-6 sm:py-7">
+          <section className="rounded-2xl border border-[#E2E7EB] bg-white p-5 sm:p-7">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7B8791]">Bibliothèque éditoriale</p>
+                <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Choisis une structure. Le studio prépare un premier jet.</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#6B7680]">Des formats conçus pour accrocher dès la couverture, apporter une idée par slide et terminer par une action claire.</p>
+              </div>
+              <span className="inline-flex w-fit items-center gap-2 rounded-xl bg-[#F2F5F7] px-3 py-2 text-xs font-semibold text-[#55616B]"><BookOpen className="h-4 w-4" />12 structures prêtes</span>
+            </div>
+          </section>
+
+          <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+            {CAROUSEL_TYPES.map((template, index) => {
+              const recommendedStyle = VISUAL_STYLES.find((style) => style.id === template.recommendedVisualStyle) || VISUAL_STYLES[0];
+              return (
+                <article key={template.id} className="group overflow-hidden rounded-2xl border border-[#E1E6EA] bg-white transition hover:-translate-y-0.5 hover:border-[#C4CDD4] hover:shadow-[0_18px_40px_-28px_rgba(24,32,40,0.42)]">
+                  <div className="flex h-28 items-center justify-between overflow-hidden px-5" style={{ backgroundColor: theme.bgPrimary }}>
+                    <div>
+                      <span className="inline-flex rounded-full border border-black/5 bg-white/70 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#68737D]">{template.badge}</span>
+                      <p className="mt-3 max-w-[260px] text-base font-bold leading-snug text-[#232A31]">{template.name}</p>
+                    </div>
+                    <div className="relative mr-2 h-20 w-24 shrink-0">
+                      <div className="absolute right-2 top-1 h-16 w-12 rotate-[8deg] rounded-lg border border-black/5 bg-white/60" />
+                      <div className="absolute right-5 top-2 h-16 w-12 -rotate-[6deg] rounded-lg border border-black/10 bg-white shadow-sm">
+                        <span className="absolute left-2 top-3 h-1.5 w-7 rounded-full" style={{ backgroundColor: activeAccent }} />
+                        <span className="absolute left-2 top-7 h-1 w-6 rounded-full bg-[#D9DEE2]" />
+                        <span className="absolute left-2 top-10 h-1 w-8 rounded-full bg-[#E7EBEE]" />
+                      </div>
+                      <span className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: activeAccent }}>{String(index + 1).padStart(2, '0')}</span>
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <p className="min-h-[42px] text-xs leading-relaxed text-[#6B7680]">{template.description}</p>
+                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#EDF0F2] pt-3">
+                      <span className="min-w-0 truncate text-[10px] font-medium text-[#87919A]">Style conseillé · {recommendedStyle.name}</span>
+                      <button type="button" onClick={() => handleUseTemplate(template)} disabled={isGenerating} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-semibold text-white transition hover:brightness-105 disabled:opacity-50" style={{ backgroundColor: activeAccent }}>
+                        Utiliser <ArrowRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </main>
+      )}
+
+      {activePage === 'projects' && (
+        <main className="mx-auto w-full max-w-[1680px] space-y-5 px-4 py-5 sm:px-6 sm:py-7">
+          <section className="flex flex-wrap items-end justify-between gap-3 rounded-2xl border border-[#E2E7EB] bg-white p-5 sm:p-7">
+            <div>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7B8791]">Espace de travail local</p>
+              <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Mes projets</h2>
+              <p className="mt-2 text-sm text-[#6B7680]">Tes créations enregistrées dans ce navigateur, prêtes à reprendre.</p>
+            </div>
+            <button type="button" onClick={handleNewProject} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#20252B] px-4 text-xs font-semibold text-white transition hover:bg-[#39434C]"><Plus className="h-4 w-4" />Nouveau carrousel</button>
+          </section>
+
+          {savedProjects.length === 0 ? (
+            <section className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#C9D1D8] bg-white px-6 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F0F3F5] text-[#66737D]"><FolderOpen className="h-6 w-6" /></div>
+              <h3 className="mt-4 text-base font-bold">Aucun projet enregistré</h3>
+              <p className="mt-2 max-w-sm text-sm leading-relaxed text-[#77828C]">Depuis le studio, clique sur « Enregistrer » pour ajouter un carrousel à cette bibliothèque.</p>
+              <button type="button" onClick={() => setActivePage('studio')} className="mt-5 rounded-xl px-4 py-2.5 text-xs font-semibold text-white" style={{ backgroundColor: activeAccent }}>Ouvrir le studio</button>
+            </section>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {savedProjects.map((saved) => {
+                const savedProject = saved.project;
+                const savedFormat = PLATFORM_FORMATS.find((item) => item.id === savedProject.formatId) || PLATFORM_FORMATS[0];
+                const savedTheme = EDITORIAL_THEMES.find((item) => item.id === savedProject.themeId) || EDITORIAL_THEMES[0];
+                const savedFont = FONT_PAIRINGS.find((item) => item.id === savedProject.fontPairingId) || FONT_PAIRINGS[0];
+                const cover = savedProject.slides[0];
+                const cardScale = Math.min(0.13, 210 / savedFormat.height, 130 / savedFormat.width);
+                return (
+                  <article key={saved.id} className="overflow-hidden rounded-2xl border border-[#E1E6EA] bg-white transition hover:border-[#C7D0D7] hover:shadow-[0_18px_40px_-28px_rgba(24,32,40,0.4)]">
+                    <div className="flex h-[230px] items-center justify-center overflow-hidden bg-[#F1F3F5] p-4">
+                      {cover && <SlideCanvas slide={cover} slideIndex={0} totalSlides={savedProject.slides.length} project={savedProject} format={savedFormat} theme={savedTheme} fontPairing={savedFont} scale={cardScale} />}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="truncate text-sm font-bold">{saved.name}</h3>
+                      <p className="mt-1 text-[10px] text-[#7B858E]">{savedFormat.name} · {savedProject.slides.length} slides · {new Date(saved.updatedAt).toLocaleDateString('fr-FR')}</p>
+                      <div className="mt-4 flex gap-2">
+                        <button type="button" onClick={() => handleOpenSavedProject(saved)} className="flex-1 rounded-lg bg-[#20252B] px-3 py-2 text-[11px] font-semibold text-white transition hover:bg-[#39434C]">Ouvrir</button>
+                        <button type="button" onClick={() => handleDuplicateSavedProject(saved)} title="Dupliquer le projet" className="rounded-lg border border-[#DCE2E7] bg-white p-2 text-[#66737D] transition hover:bg-[#F3F5F6]"><Copy className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => handleDeleteSavedProject(saved.id)} title="Supprimer le projet" className="rounded-lg border border-[#DCE2E7] bg-white p-2 text-[#8C7777] transition hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </main>
+      )}
+
+      {toast && <div role="status" className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-[#20252B] px-4 py-3 text-xs font-semibold text-white shadow-xl">{toast}</div>}
+      </div>
     </div>
   );
 }
