@@ -122,10 +122,11 @@ export function App() {
   const [project, setProject] = useState<CarouselProject>(readDraft);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const [topicInput, setTopicInput] = useState(() => project.topic || '');
-  const [carouselType, setCarouselType] = useState<CarouselTypeId>('auto-smart');
+  const [carouselType, setCarouselType] = useState<CarouselTypeId>(project.carouselType || 'auto-smart');
   const [activeTab, setActiveTab] = useState<StudioTab>('design');
   const [illustrationCategory, setIllustrationCategory] = useState<string>('Toutes');
   const [illustrationSearch, setIllustrationSearch] = useState('');
+  const [templateSearch, setTemplateSearch] = useState('');
   const [viewportWidth, setViewportWidth] = useState(1440);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -215,8 +216,27 @@ export function App() {
     });
   }, [illustrationCategory, illustrationSearch]);
 
+  const filteredTemplates = useMemo(() => {
+    const query = templateSearch.trim().toLocaleLowerCase('fr');
+    if (!query) return CAROUSEL_TYPES;
+    return CAROUSEL_TYPES.filter((item) =>
+      `${item.name} ${item.description} ${item.badge}`.toLocaleLowerCase('fr').includes(query)
+    );
+  }, [templateSearch]);
+
   const updateProject = (patch: Partial<CarouselProject>) => {
     setProject((previous) => ({ ...previous, ...patch }));
+  };
+
+  const handleFormatChange = (formatId: CarouselProject['formatId']) => {
+    const limit = formatId === 'tiktok-9-16' ? 35 : 20;
+    if (project.slides.length > limit) {
+      const excess = project.slides.length - limit;
+      setToast(`Retire ${excess} slide${excess > 1 ? 's' : ''} avant de passer à ce format.`);
+      window.setTimeout(() => setToast(''), 2800);
+      return;
+    }
+    updateProject({ formatId });
   };
 
   const updateActiveSlide = (patch: Partial<SlideItem>) => {
@@ -433,6 +453,9 @@ export function App() {
         format,
         imageFormat
       );
+    } catch {
+      setToast('Export impossible pour cette slide. Réessaie avec un autre format.');
+      window.setTimeout(() => setToast(''), 2800);
     } finally {
       setIsExporting(false);
     }
@@ -448,6 +471,9 @@ export function App() {
         (current, total) => setExportProgress(`${current}/${total}`),
         imageFormat
       );
+    } catch {
+      setToast('Export du carrousel impossible. Réessaie après avoir vérifié les images.');
+      window.setTimeout(() => setToast(''), 2800);
     } finally {
       setIsExporting(false);
       setExportProgress('');
@@ -462,6 +488,8 @@ export function App() {
       window.setTimeout(() => setCaptionCopied(false), 1800);
     } catch {
       setCaptionCopied(false);
+      setToast('La copie automatique n’est pas disponible dans ce navigateur.');
+      window.setTimeout(() => setToast(''), 2800);
     }
   };
 
@@ -491,6 +519,8 @@ export function App() {
     { id: 'templates', label: 'Modèles', description: '12 structures', icon: <BookOpen className="h-4 w-4" /> },
     { id: 'projects', label: 'Mes projets', description: `${savedProjects.length} enregistrés`, icon: <FolderOpen className="h-4 w-4" /> },
   ];
+  const titleCharacterCount = Array.from((currentSlide?.title || '').replace(/\*([^*]+)\*/g, '$1').trim()).length;
+  const checklistItemCount = (currentSlide?.bulletPoints || []).map((item) => item.trim()).filter(Boolean).length;
 
   return (
     <div className="min-h-screen bg-[#F4F6F8] text-[#20252B] lg:flex">
@@ -549,7 +579,7 @@ export function App() {
                 <span className="sr-only">Format du carrousel</span>
                 <select
                   value={project.formatId}
-                  onChange={(event) => updateProject({ formatId: event.target.value as CarouselProject['formatId'] })}
+                  onChange={(event) => handleFormatChange(event.target.value as CarouselProject['formatId'])}
                   className="h-9 max-w-[175px] appearance-none rounded-lg border border-[#DCE2E7] bg-white py-2 pl-3 pr-8 text-[10px] font-semibold text-[#34404A] outline-none focus:border-[#8996A1] sm:text-xs"
                 >
                   {PLATFORM_FORMATS.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.aspectRatio}</option>)}
@@ -571,9 +601,9 @@ export function App() {
               <button type="button" onClick={handleSaveProject} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#DCE2E7] bg-white px-3 text-[11px] font-semibold text-[#47535D] transition hover:bg-[#F4F6F8]">
                 <Save className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Enregistrer</span>
               </button>
-              <button onClick={() => void handleDownloadAll()} disabled={isExporting} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#20252B] px-3.5 text-[11px] font-semibold text-white transition hover:bg-[#39434C] disabled:cursor-wait disabled:opacity-60 sm:px-4">
+              <button type="button" onClick={() => void handleDownloadAll()} disabled={isExporting} aria-label="Télécharger toutes les slides en ZIP" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#20252B] px-3.5 text-[11px] font-semibold text-white transition hover:bg-[#39434C] disabled:cursor-wait disabled:opacity-60 sm:px-4">
                 <Download className="h-3.5 w-3.5" />
-                <span>{isExporting ? `Export ${exportProgress}` : 'Exporter'}</span>
+                <span>{isExporting ? (exportProgress ? `ZIP ${exportProgress}` : 'Export…') : 'Télécharger ZIP'}</span>
               </button>
             </div>
           </div>
@@ -706,6 +736,8 @@ export function App() {
                     type="button"
                     onClick={() => void handleDownloadCurrent()}
                     disabled={isExporting}
+                    aria-label={`Télécharger cette slide en ${imageFormat.toUpperCase()}`}
+                    title={`Télécharger cette slide en ${imageFormat.toUpperCase()}`}
                     className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#E6DFD4] bg-white px-3 text-xs font-semibold transition hover:bg-[#F6F3ED] disabled:opacity-50"
                   >
                     <Download className="h-3.5 w-3.5" />
@@ -804,7 +836,7 @@ export function App() {
                   {captionCopied ? 'Copié' : 'Copier'}
                 </button>
               </div>
-              <p className="mt-3 line-clamp-3 whitespace-pre-line text-xs leading-relaxed text-[#625B52]">{project.caption}</p>
+              <p className="mt-3 max-h-[220px] overflow-y-auto whitespace-pre-line pr-2 text-xs leading-relaxed text-[#625B52]">{project.caption}</p>
               {project.hashtags.length > 0 && (
                 <p className="mt-2 line-clamp-1 text-[11px] text-[#8B8174]">{project.hashtags.join(' ')}</p>
               )}
@@ -995,7 +1027,7 @@ export function App() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold">Petit titre</label>
+                    <label className="mb-1.5 block text-xs font-semibold">Sur-titre</label>
                     <input
                       value={currentSlide.kicker || ''}
                       onChange={(event) => updateActiveSlide({ kicker: event.target.value })}
@@ -1012,13 +1044,17 @@ export function App() {
                       onChange={(event) => updateActiveSlide({ title: event.target.value })}
                       className="w-full resize-y rounded-xl border border-[#E3DDD2] bg-white px-3 py-2.5 text-xs leading-relaxed outline-none focus:border-[#81766A]"
                     />
-                    <p className="mt-1 text-[10px] text-[#8B8174]">Entoure un mot d’astérisques pour le mettre en valeur : *mot*</p>
+                    <div className="mt-1 flex items-start justify-between gap-3 text-[10px] text-[#8B8174]">
+                      <p>Entoure un mot d’astérisques pour le mettre en valeur : *mot*</p>
+                      <span className="shrink-0 tabular-nums">{titleCharacterCount} caractères</span>
+                    </div>
+                    {titleCharacterCount > 100 && <p className="mt-1 text-[10px] font-medium text-amber-700">Titre long : l’aperçu réduit automatiquement la taille pour garder le texte lisible.</p>}
                   </div>
 
                   {currentSlide.layout === 'big-stat' && (
                     <div className="space-y-3 rounded-xl bg-[#F5F1E9] p-3">
                       <div>
-                        <label className="mb-1 block text-[11px] font-semibold">Chiffre clé</label>
+                        <label className="mb-1 block text-[11px] font-semibold">Repère affiché</label>
                         <input
                           value={currentSlide.statValue || ''}
                           onChange={(event) => updateActiveSlide({ statValue: event.target.value })}
@@ -1060,13 +1096,19 @@ export function App() {
                     </div>
                   ) : currentSlide.layout === 'checklist-card' ? (
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold">Checklist (une ligne par point)</label>
+                      <div className="mb-1.5 flex items-center justify-between gap-2">
+                        <label className="text-xs font-semibold">Checklist</label>
+                        <span className={`text-[10px] tabular-nums ${checklistItemCount > 4 ? 'font-semibold text-amber-700' : 'text-[#8B8174]'}`}>{checklistItemCount}/4 visibles</span>
+                      </div>
                       <textarea
                         rows={5}
                         value={(currentSlide.bulletPoints || []).join('\n')}
-                        onChange={(event) => updateActiveSlide({ bulletPoints: event.target.value.split('\n') })}
+                        onChange={(event) => updateActiveSlide({ bulletPoints: event.target.value.split(/\r?\n/) })}
+                        aria-label="Points de la checklist, un point par ligne"
                         className="w-full rounded-xl border border-[#E3DDD2] bg-white px-3 py-2.5 text-xs leading-relaxed outline-none focus:border-[#81766A]"
                       />
+                      <p className="mt-1 text-[10px] text-[#8B8174]">Une ligne par point. Les lignes vides ne s’affichent pas.</p>
+                      {checklistItemCount > 4 && <p className="mt-1 text-[10px] font-medium text-amber-700">Cette mise en page affiche les quatre premiers points. Répartis le reste sur une autre slide.</p>}
                     </div>
                   ) : (
                     <div>
@@ -1090,7 +1132,7 @@ export function App() {
                       />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-[11px] font-semibold">Invite à swiper</label>
+                      <label className="mb-1.5 block text-[11px] font-semibold">Texte de navigation</label>
                       <input
                         value={currentSlide.swipePrompt || ''}
                         onChange={(event) => updateActiveSlide({ swipePrompt: event.target.value })}
@@ -1141,6 +1183,9 @@ export function App() {
                     </select>
                   </div>
 
+                  {filteredIllustrations.length === 0 ? (
+                    <p className="rounded-xl bg-[#F5F1E9] px-4 py-8 text-center text-xs text-[#81766A]">Aucun visuel trouvé. Essaie un autre mot ou une autre catégorie.</p>
+                  ) : (
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                     {filteredIllustrations.map((item) => {
                       const selected = currentSlide.illustrationId === item.id;
@@ -1164,6 +1209,7 @@ export function App() {
                       );
                     })}
                   </div>
+                  )}
 
                   <button
                     type="button"
@@ -1197,8 +1243,27 @@ export function App() {
             </div>
           </section>
 
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <label className="relative block w-full sm:max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#89939B]" />
+              <input
+                value={templateSearch}
+                onChange={(event) => setTemplateSearch(event.target.value)}
+                placeholder="Rechercher un modèle ou un objectif…"
+                aria-label="Rechercher un modèle"
+                className="h-11 w-full rounded-xl border border-[#DCE2E7] bg-white pl-10 pr-3 text-xs outline-none transition focus:border-[#8996A1] focus:ring-2 focus:ring-[#8996A1]/10"
+              />
+            </label>
+            <p className="text-[11px] text-[#77838C]">{filteredTemplates.length} modèle{filteredTemplates.length === 1 ? '' : 's'}</p>
+          </div>
+          {filteredTemplates.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[#C9D1D8] bg-white px-6 py-12 text-center">
+              <p className="text-sm font-semibold text-[#45515A]">Aucun modèle trouvé</p>
+              <p className="mt-1 text-xs text-[#77838C]">Essaie un terme plus court ou un autre mot-clé.</p>
+            </div>
+          ) : (
           <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-            {CAROUSEL_TYPES.map((template, index) => {
+            {filteredTemplates.map((template, index) => {
               const recommendedStyle = VISUAL_STYLES.find((style) => style.id === template.recommendedVisualStyle) || VISUAL_STYLES[0];
               return (
                 <article key={template.id} className="group overflow-hidden rounded-2xl border border-[#E1E6EA] bg-white transition hover:-translate-y-0.5 hover:border-[#C4CDD4] hover:shadow-[0_18px_40px_-28px_rgba(24,32,40,0.42)]">
@@ -1230,6 +1295,7 @@ export function App() {
               );
             })}
           </div>
+          )}
         </main>
       )}
 

@@ -68,6 +68,57 @@ function mixWithWhite(hex: string, whitenessRatio: number): string {
     .padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`;
 }
 
+function estimateWrappedLines(text: string, fontSize: number, maxWidth: number, uppercase = false): number {
+  const plainText = text
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/\[([^\]]+)\]/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!plainText) return 1;
+
+  const averageGlyphWidth = fontSize * (uppercase ? 0.62 : 0.54);
+  const capacity = Math.max(6, maxWidth / averageGlyphWidth);
+  let lines = 1;
+  let lineLength = 0;
+
+  for (const word of plainText.split(' ')) {
+    const wordLength = Array.from(word).length;
+    if (wordLength > capacity) {
+      if (lineLength > 0) {
+        lines += 1;
+        lineLength = 0;
+      }
+      const wordLines = Math.ceil(wordLength / capacity);
+      lines += wordLines - 1;
+      lineLength = wordLength - (wordLines - 1) * capacity;
+    } else if (lineLength === 0) {
+      lineLength = wordLength;
+    } else if (lineLength + 1 + wordLength <= capacity) {
+      lineLength += 1 + wordLength;
+    } else {
+      lines += 1;
+      lineLength = wordLength;
+    }
+  }
+
+  return lines;
+}
+
+function fitFontSize(
+  text: string,
+  preferredSize: number,
+  minimumSize: number,
+  maxWidth: number,
+  maxLines: number,
+  uppercase = false
+): number {
+  let size = preferredSize;
+  while (size > minimumSize && estimateWrappedLines(text, size, maxWidth, uppercase) > maxLines) {
+    size -= 2;
+  }
+  return Math.max(minimumSize, size);
+}
+
 // 3D Pushpin SVG for Skale Pinned Notes style — dynamically colored!
 const PushPin3DSvg: React.FC<{ color: string }> = ({ color }) => (
   <svg width="46" height="46" viewBox="0 0 48 48" fill="none">
@@ -204,6 +255,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
       : safeZone.left
     : 74;
   const padRight = project.respectSafeZones ? safeZone.right : 74;
+  const safeContentWidth = Math.max(120, width - padLeft - padRight);
 
   const numStr = String(slideIndex + 1).padStart(2, '0');
   const totalStr = String(totalSlides).padStart(2, '0');
@@ -545,10 +597,12 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
               style={{
                 fontFamily: fontPairing.headingFamily,
                 fontWeight: fontPairing.headingWeight,
-                fontSize: isSquare ? '44px' : '50px',
+                fontSize: `${fitFontSize(slide.title, isSquare ? 44 : 50, 30, safeContentWidth * 0.76, 4)}px`,
                 lineHeight: 1.08,
                 color: '#0F172A',
                 margin: 0,
+                overflowWrap: 'anywhere',
+                whiteSpace: 'pre-line',
               }}
             >
               {slide.title.split(/(\*[^*]+\*)/g).map((part, idx) =>
@@ -579,7 +633,9 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                     borderRadius: '14px',
                     backgroundColor: 'rgba(255,255,255,0.75)',
                     fontFamily: fontPairing.bodyFamily,
-                    fontSize: '20px',
+                    fontSize: `${fitFontSize(slide.comparisonLeftText || '', 20, 16, safeContentWidth * 0.72, 3)}px`,
+                    lineHeight: 1.35,
+                    overflowWrap: 'anywhere',
                     color: '#475569',
                   }}
                 >
@@ -592,7 +648,9 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                     backgroundColor: '#FFFFFF',
                     border: `2px solid ${userAccent}`,
                     fontFamily: fontPairing.bodyFamily,
-                    fontSize: '20px',
+                    fontSize: `${fitFontSize(slide.comparisonRightText || '', 20, 16, safeContentWidth * 0.72, 3)}px`,
+                    lineHeight: 1.35,
+                    overflowWrap: 'anywhere',
                     fontWeight: 600,
                     color: '#0F172A',
                   }}
@@ -601,11 +659,37 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                   {slide.comparisonRightText}
                 </div>
               </div>
+            ) : slide.layout === 'big-stat' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <strong
+                  style={{
+                    color: userAccent,
+                    fontFamily: fontPairing.headingFamily,
+                    fontSize: `${fitFontSize(slide.statValue || 'À SOURCER', 46, 28, safeContentWidth * 0.35, 1)}px`,
+                    lineHeight: 1,
+                    overflowWrap: 'anywhere',
+                  }}
+                >
+                  {slide.statValue || 'À SOURCER'}
+                </strong>
+                <p
+                  style={{
+                    flex: '1 1 240px',
+                    margin: 0,
+                    fontFamily: fontPairing.bodyFamily,
+                    fontSize: `${fitFontSize(slide.statLabel || slide.subtitle || '', 20, 16, safeContentWidth * 0.55, 3)}px`,
+                    lineHeight: 1.35,
+                    overflowWrap: 'anywhere',
+                  }}
+                >
+                  {slide.statLabel || slide.subtitle}
+                </p>
+              </div>
             ) : slide.layout === 'checklist-card' && slide.bulletPoints ? (
               <div
                 style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}
               >
-                {slide.bulletPoints.slice(0, 3).map((bp, i) => (
+                {slide.bulletPoints.map((bp) => bp.trim()).filter(Boolean).slice(0, 4).map((bp, i) => (
                   <div
                     key={i}
                     style={{
@@ -614,7 +698,9 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                       backgroundColor: 'rgba(255,255,255,0.88)',
                       borderLeft: `4px solid ${userAccent}`,
                       fontFamily: fontPairing.bodyFamily,
-                      fontSize: '20px',
+                      fontSize: `${fitFontSize(bp, 20, 15, safeContentWidth * 0.68, 3)}px`,
+                      lineHeight: 1.3,
+                      overflowWrap: 'anywhere',
                       color: '#1E293B',
                       fontWeight: 500,
                     }}
@@ -627,8 +713,10 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
               <p
                 style={{
                   fontFamily: fontPairing.bodyFamily,
-                  fontSize: '23px',
+                  fontSize: `${fitFontSize(slide.subtitle || slide.statLabel || '', 23, 16, safeContentWidth * 0.72, 4)}px`,
                   lineHeight: 1.42,
+                  overflowWrap: 'anywhere',
+                  whiteSpace: 'pre-line',
                   color: '#334155',
                   margin: 0,
                 }}
@@ -992,6 +1080,8 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
           style={{
             display: 'inline-flex',
             alignItems: 'center',
+            flexWrap: 'wrap',
+            maxWidth: '100%',
             gap: '8px',
             alignSelf: isCenteredStyle ? 'center' : 'flex-start',
             padding: '7px 16px',
@@ -1005,7 +1095,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                   : '#111111'
                 : activeAccent,
             fontFamily: fontPairing.monoFamily,
-            fontSize: '14px',
+            fontSize: `${fitFontSize(text, 14, 10, safeContentWidth * 0.82, 2, true)}px`,
             fontWeight: 700,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
@@ -1032,7 +1122,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
             border: `2px solid ${ink}`,
             boxShadow: `4px 4px 0px ${ink}`,
             fontFamily: fontPairing.monoFamily,
-            fontSize: '14px',
+            fontSize: `${fitFontSize(text, 14, 10, safeContentWidth * 0.9, 2, true)}px`,
             fontWeight: 700,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
@@ -1049,7 +1139,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
         <div
           style={{
             fontFamily: fontPairing.monoFamily,
-            fontSize: '15px',
+            fontSize: `${fitFontSize(text, 15, 10, safeContentWidth * 0.9, 2, true)}px`,
             fontWeight: 600,
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
@@ -1068,9 +1158,11 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
         style={{
           display: 'inline-flex',
           alignItems: 'center',
+          flexWrap: 'wrap',
+          maxWidth: '100%',
           gap: '10px',
           fontFamily: fontPairing.monoFamily,
-          fontSize: '15px',
+          fontSize: `${fitFontSize(text, 15, 10, safeContentWidth * 0.9, 2, true)}px`,
           fontWeight: 600,
           letterSpacing: '0.15em',
           textTransform: 'uppercase',
@@ -1985,10 +2077,12 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
             style={{
               fontFamily: headingFont,
               fontWeight: fontPairing.headingWeight,
-              fontSize: isSquare ? '48px' : '56px',
+              fontSize: `${fitFontSize(slide.title, isSquare ? 48 : 56, 32, safeContentWidth, 3, isUppercaseHeading)}px`,
               lineHeight: 1.08,
               color: ink,
               margin: 0,
+              overflowWrap: 'anywhere',
+              whiteSpace: 'pre-line',
             }}
           >
             {renderStyledHeadline(slide.title)}
@@ -1998,10 +2092,12 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
             <p
               style={{
                 fontFamily: fontPairing.bodyFamily,
-                fontSize: '23px',
+                fontSize: `${fitFontSize(slide.subtitle, 23, 17, safeContentWidth, 3)}px`,
                 lineHeight: 1.42,
                 color: inkMuted,
                 margin: 0,
+                overflowWrap: 'anywhere',
+                whiteSpace: 'pre-line',
               }}
             >
               {slide.subtitle}
@@ -2068,8 +2164,10 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                   fontWeight: fontPairing.headingWeight,
                   fontStyle: fontPairing.headingStyle || 'normal',
                   textTransform: isUppercaseHeading ? 'uppercase' : 'none',
-                  fontSize: titleSize,
+                  fontSize: `${fitFontSize(slide.title, Number.parseInt(titleSize, 10), isVertical916 ? 36 : 32, safeContentWidth, isVertical916 ? 5 : 4, isUppercaseHeading)}px`,
                   lineHeight: 1.04,
+                  overflowWrap: 'anywhere',
+                  whiteSpace: 'pre-line',
                   letterSpacing: isUppercaseHeading ? '0.01em' : '-0.025em',
                   color: ink,
                   margin: 0,
@@ -2083,11 +2181,13 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                 <p
                   style={{
                     fontFamily: fontPairing.bodyFamily,
-                    fontSize: isVertical916 ? '25px' : '23px',
+                    fontSize: `${fitFontSize(slide.subtitle, isVertical916 ? 25 : 23, 17, safeContentWidth * 0.92, isVertical916 ? 4 : 3)}px`,
                     lineHeight: 1.42,
                     color: inkMuted,
                     margin: isCenteredStyle ? '0 auto' : 0,
                     maxWidth: '92%',
+                    overflowWrap: 'anywhere',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {slide.subtitle}
@@ -2145,12 +2245,15 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                 <div
                   style={{
                     fontFamily: headingFont,
-                    fontSize: isSquare ? '78px' : '94px',
+                    fontSize: `${fitFontSize(slide.statValue || 'À SOURCER', isSquare ? 78 : 94, 30, safeContentWidth * 0.42, 1, isUppercaseHeading)}px`,
                     lineHeight: 0.92,
                     letterSpacing: '-0.03em',
                     color: activeAccent,
                     fontStyle: isUppercaseHeading ? 'normal' : 'italic',
-                    flexShrink: 0,
+                    flex: '0 1 auto',
+                    maxWidth: '45%',
+                    overflowWrap: 'anywhere',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {slide.statValue || 'À SOURCER'}
@@ -2159,13 +2262,17 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                 {slide.statLabel && (
                   <div
                     style={{
+                      flex: '1 1 280px',
+                      minWidth: 0,
                       fontFamily: fontPairing.bodyFamily,
-                      fontSize: '20px',
+                      fontSize: `${fitFontSize(slide.statLabel, 20, 16, safeContentWidth * 0.56, 3)}px`,
                       lineHeight: 1.35,
                       color: inkMuted,
                       borderLeft: `2px solid ${borderCol}`,
                       paddingLeft: '20px',
                       textAlign: 'left',
+                      overflowWrap: 'anywhere',
+                      whiteSpace: 'pre-line',
                     }}
                   >
                     {slide.statLabel}
@@ -2178,11 +2285,13 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                   fontFamily: headingFont,
                   fontWeight: fontPairing.headingWeight,
                   textTransform: isUppercaseHeading ? 'uppercase' : 'none',
-                  fontSize: isSquare ? '48px' : '54px',
+                  fontSize: `${fitFontSize(slide.title, isSquare ? 48 : 54, 32, safeContentWidth, 4, isUppercaseHeading)}px`,
                   lineHeight: 1.08,
                   color: ink,
                   margin: 0,
                   marginBottom: slide.subtitle ? '14px' : '0',
+                  overflowWrap: 'anywhere',
+                  whiteSpace: 'pre-line',
                 }}
               >
                 {renderStyledHeadline(slide.title)}
@@ -2192,10 +2301,12 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                 <p
                   style={{
                     fontFamily: fontPairing.bodyFamily,
-                    fontSize: '23px',
+                    fontSize: `${fitFontSize(slide.subtitle, 23, 17, safeContentWidth, 3)}px`,
                     lineHeight: 1.42,
                     color: inkMuted,
                     margin: 0,
+                    overflowWrap: 'anywhere',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {slide.subtitle}
@@ -2211,6 +2322,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
         const isSideBySideUI =
           visualStyle === 'designmates-giant-num' ||
           visualStyle === 'shodwe-brush';
+        const comparisonTextWidth = Math.max(180, isSideBySideUI ? (safeContentWidth - 120) / 2 : safeContentWidth - 64);
 
         return (
           <div
@@ -2229,10 +2341,12 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                   fontFamily: headingFont,
                   fontWeight: fontPairing.headingWeight,
                   textTransform: isUppercaseHeading ? 'uppercase' : 'none',
-                  fontSize: isSquare ? '48px' : '54px',
+                  fontSize: `${fitFontSize(slide.title, isSquare ? 48 : 54, 32, safeContentWidth, 3, isUppercaseHeading)}px`,
                   lineHeight: 1.06,
                   color: ink,
                   margin: 0,
+                  overflowWrap: 'anywhere',
+                  whiteSpace: 'pre-line',
                 }}
               >
                 {renderStyledHeadline(slide.title)}
@@ -2278,6 +2392,8 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                     textTransform: 'uppercase',
                     color: inkMuted,
                     marginBottom: '8px',
+                    overflowWrap: 'anywhere',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   ✕ {slide.comparisonLeftTitle || 'Avant'}
@@ -2285,10 +2401,12 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                 <p
                   style={{
                     fontFamily: fontPairing.bodyFamily,
-                    fontSize: '21px',
+                    fontSize: `${fitFontSize(slide.comparisonLeftText || '', 21, 16, comparisonTextWidth, 4)}px`,
                     lineHeight: 1.38,
                     color: inkMuted,
                     margin: 0,
+                    overflowWrap: 'anywhere',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {slide.comparisonLeftText}
@@ -2322,6 +2440,8 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                     textTransform: 'uppercase',
                     color: activeAccent,
                     marginBottom: '8px',
+                    overflowWrap: 'anywhere',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   ✓ {slide.comparisonRightTitle || 'Maintenant'}
@@ -2329,11 +2449,13 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                 <p
                   style={{
                     fontFamily: fontPairing.bodyFamily,
-                    fontSize: '21px',
+                    fontSize: `${fitFontSize(slide.comparisonRightText || '', 21, 16, comparisonTextWidth, 4)}px`,
                     lineHeight: 1.38,
                     color: ink,
                     fontWeight: 600,
                     margin: 0,
+                    overflowWrap: 'anywhere',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {slide.comparisonRightText}
@@ -2345,8 +2467,9 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
       }
 
       case 'checklist-card': {
-        const bullets = slide.bulletPoints || [];
+        const bullets = (slide.bulletPoints || []).map((item) => item.trim()).filter(Boolean);
         const illusSize = isVertical916 ? 200 : 145;
+        const checklistTitleWidth = Math.max(220, safeContentWidth - (hasIllustration ? illusSize + 48 : 0));
         return (
           <div
             style={{
@@ -2372,10 +2495,12 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                     fontFamily: headingFont,
                     fontWeight: fontPairing.headingWeight,
                     textTransform: isUppercaseHeading ? 'uppercase' : 'none',
-                    fontSize: isSquare ? '46px' : '52px',
+                    fontSize: `${fitFontSize(slide.title, isSquare ? 46 : 52, 30, checklistTitleWidth, 3, isUppercaseHeading)}px`,
                     lineHeight: 1.06,
                     color: ink,
                     margin: 0,
+                    overflowWrap: 'anywhere',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {renderStyledHeadline(slide.title)}
@@ -2431,10 +2556,12 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                   <div
                     style={{
                       fontFamily: fontPairing.bodyFamily,
-                      fontSize: '22px',
+                      fontSize: `${fitFontSize(item, 22, 16, safeContentWidth - 110, 2)}px`,
                       lineHeight: 1.35,
                       color: ink,
                       fontWeight: 500,
+                      overflowWrap: 'anywhere',
+                      whiteSpace: 'pre-line',
                     }}
                   >
                     {renderStyledHeadline(item)}
@@ -2473,11 +2600,13 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                   fontFamily: headingFont,
                   fontWeight: fontPairing.headingWeight,
                   textTransform: isUppercaseHeading ? 'uppercase' : 'none',
-                  fontSize: isSquare ? '50px' : '58px',
+                  fontSize: `${fitFontSize(slide.title, isSquare ? 50 : 58, 32, safeContentWidth - 32, 5, isUppercaseHeading)}px`,
                   lineHeight: 1.1,
                   color: ink,
                   margin: 0,
                   marginBottom: slide.subtitle ? '20px' : '0',
+                  overflowWrap: 'anywhere',
+                  whiteSpace: 'pre-line',
                 }}
               >
                 {renderStyledHeadline(slide.title)}
@@ -2487,11 +2616,13 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                 <p
                   style={{
                     fontFamily: fontPairing.bodyFamily,
-                    fontSize: '23px',
+                    fontSize: `${fitFontSize(slide.subtitle, 23, 17, safeContentWidth * 0.88, 4)}px`,
                     lineHeight: 1.42,
                     color: inkMuted,
                     margin: '0 auto',
                     maxWidth: '88%',
+                    overflowWrap: 'anywhere',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {slide.subtitle}
@@ -2531,12 +2662,14 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                   fontFamily: headingFont,
                   fontWeight: fontPairing.headingWeight,
                   textTransform: isUppercaseHeading ? 'uppercase' : 'none',
-                  fontSize: isSquare ? '50px' : '58px',
+                  fontSize: `${fitFontSize(slide.title, isSquare ? 50 : 58, 32, safeContentWidth, 5, isUppercaseHeading)}px`,
                   lineHeight: 1.07,
                   letterSpacing: isUppercaseHeading ? '0.01em' : '-0.02em',
                   color: ink,
                   margin: 0,
                   marginBottom: slide.subtitle ? '20px' : '0',
+                  overflowWrap: 'anywhere',
+                  whiteSpace: 'pre-line',
                 }}
               >
                 {renderStyledHeadline(slide.title)}
@@ -2546,7 +2679,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                 <p
                   style={{
                     fontFamily: fontPairing.bodyFamily,
-                    fontSize: '24px',
+                    fontSize: `${fitFontSize(slide.subtitle, 24, 17, safeContentWidth - (isCenteredStyle ? 0 : 22), 4)}px`,
                     lineHeight: 1.45,
                     color: inkMuted,
                     margin: 0,
@@ -2554,6 +2687,8 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                     borderLeft: isCenteredStyle
                       ? 'none'
                       : `3px solid ${activeAccent}`,
+                    overflowWrap: 'anywhere',
+                    whiteSpace: 'pre-line',
                   }}
                 >
                   {slide.subtitle}
@@ -2628,11 +2763,13 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
           <span
             style={{
               fontFamily: fontPairing.monoFamily,
-              fontSize: '15px',
+              fontSize: `${fitFontSize(project.authorHandle || '', 15, 10, safeContentWidth * 0.48, 1, true)}px`,
               fontWeight: 600,
               color: inkMuted,
               letterSpacing: '0.05em',
               display: 'inline-flex',
+              maxWidth: '55%',
+              overflowWrap: 'anywhere',
               alignItems: 'center',
               gap: '8px',
             }}
@@ -2726,11 +2863,14 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
             <div
               style={{
                 fontFamily: fontPairing.monoFamily,
-                fontSize: '14px',
+                fontSize: `${fitFontSize(slide.swipePrompt || (slideIndex === totalSlides - 1 ? 'Enregistrer' : 'Glisser'), 14, 9, safeContentWidth * 0.42, 2, true)}px`,
                 fontWeight: 600,
                 color: slideIndex === totalSlides - 1 ? activeAccent : ink,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
+                maxWidth: '48%',
+                overflowWrap: 'anywhere',
+                textAlign: 'right',
               }}
             >
               {slide.swipePrompt ||
