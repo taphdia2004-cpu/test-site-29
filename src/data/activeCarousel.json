@@ -1,0 +1,102 @@
+{
+  "id": "preset-illustrated-1",
+  "title": "L’Art de la Simplicité",
+  "topic": "Créer des carrousels simples, illustrés et percutants",
+  "targetAudience": "Créateurs & Entrepreneurs",
+  "formatId": "ig-4-5",
+  "themeId": "vogue-ivory",
+  "fontPairingId": "instrument-jakarta",
+  "frameStyle": "minimal-clean",
+  "frameworkId": "pas-viral",
+  "authorName": "Atelier",
+  "authorHandle": "@atelier.carrousel",
+  "authorRole": "Studio",
+  "showGrain": false,
+  "showSwipeIndicator": true,
+  "showSlideNumbers": true,
+  "respectSafeZones": true,
+  "caption": "Pourquoi les carrousels les plus simples sont ceux qu'on enregistre le plus.\n\n01. Un hook court avec une illustration forte\n02. Un seul chiffre marquant\n03. Une idée par image\n04. Une liste claire à sauvegarder\n\n📌 Enregistre ce post pour ton prochain contenu.",
+  "hashtags": [
+    "#carrousel",
+    "#instagram",
+    "#tiktok",
+    "#minimalisme"
+  ],
+  "recommendedAudio": "Piano minimaliste",
+  "researchSummary": {
+    "hookAngle": "Simplicité & Illustrations éditoriales",
+    "formatChoiceReason": "1080×1350 Portrait",
+    "retentionTrigger": "Alternance texte épuré et illustrations",
+    "algorithmicGoal": "Enregistrements (Saves)"
+  },
+  "slides": [
+    {
+      "id": "s1",
+      "layout": "cover-editorial",
+      "kicker": "GUIDE VISUEL",
+      "title": "Pourquoi les carrousels *les plus simples* captent toute l’attention.",
+      "subtitle": "Moins de texte. Plus d’impact. Des illustrations qui respirent.",
+      "body": "",
+      "imageUrl": "/illustrations/editorial-focus.png",
+      "swipePrompt": "Swiper →"
+    },
+    {
+      "id": "s2",
+      "layout": "big-stat",
+      "kicker": "01 — L’ATTENTION",
+      "title": "Tu as moins de *3 secondes* pour donner envie de lire.",
+      "subtitle": "Une image aérée avec une seule idée claire arrête immédiatement le scroll.",
+      "statValue": "2,8s",
+      "statLabel": "Temps moyen d’attention sur mobile.",
+      "body": "",
+      "swipePrompt": "Continuer →"
+    },
+    {
+      "id": "s3",
+      "layout": "numbered-insight",
+      "kicker": "02 — L’ILLUSTRATION",
+      "title": "Une *image forte* vaut mieux qu’un long paragraphe.",
+      "subtitle": "Alterne les slides de texte avec des illustrations minimalistes pour reposer l’œil et doubler la rétention.",
+      "body": "",
+      "imageUrl": "/illustrations/editorial-growth.png",
+      "swipePrompt": "Voir la différence →"
+    },
+    {
+      "id": "s4",
+      "layout": "comparison-split",
+      "kicker": "03 — LE CONTRASTE",
+      "title": "Surchargé vs *Éditorial*",
+      "subtitle": "",
+      "body": "",
+      "comparisonLeftTitle": "À éviter",
+      "comparisonLeftText": "Des blocs de texte serrés, 5 couleurs différentes et aucun espace vide.",
+      "comparisonRightTitle": "À adopter",
+      "comparisonRightText": "Un fond crème apaisant, un titre fort et une illustration épurée.",
+      "swipePrompt": "La checklist →"
+    },
+    {
+      "id": "s5",
+      "layout": "checklist-card",
+      "kicker": "04 — MÉMO",
+      "title": "Les *3 règles* d’un carrousel réussi",
+      "subtitle": "",
+      "body": "",
+      "bulletPoints": [
+        "Un titre de couverture en *moins de 10 mots*",
+        "Des *illustrations* sur 2 ou 3 slides clés",
+        "Une seule idée par image, facile à lire sur téléphone"
+      ],
+      "swipePrompt": "Dernière slide →"
+    },
+    {
+      "id": "s6",
+      "layout": "cta-outro",
+      "kicker": "FIN",
+      "title": "Garde ce modèle en *favoris* pour tes prochains posts.",
+      "subtitle": "Télécharge tes slides en images PNG haute définition en un clic.",
+      "body": "",
+      "imageUrl": "/illustrations/editorial-idea.png",
+      "swipePrompt": "Enregistrer 📌"
+    }
+  ]
+}
