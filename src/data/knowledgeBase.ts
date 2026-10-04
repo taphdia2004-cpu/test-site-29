@@ -460,10 +460,9 @@ export const PRESET_CAROUSELS: CarouselProject[] = [
         subtitle: '',
         body: '',
         bulletPoints: [
-          'La promesse de couverture correspond au contenu',
-          'Chaque slide porte une idée principale',
-          'Le texte reste lisible dans la zone sûre',
-          'L’appel à l’action apporte une suite utile',
+          'La couverture annonce clairement le sujet',
+          'Chaque slide porte une idée, dans la zone sûre',
+          'La fin propose une action utile',
         ],
         illustrationId: 'trophy-laurel',
         swipePrompt: 'Conclusion →',

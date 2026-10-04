@@ -2749,6 +2749,10 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
               zIndex: 30,
             }}
           >
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: `${safeZone.top}px`, background: 'rgba(220, 38, 38, 0.08)' }} />
+            <div style={{ position: 'absolute', top: `${safeZone.top}px`, bottom: `${safeZone.bottom}px`, left: 0, width: `${safeZone.left}px`, background: 'rgba(220, 38, 38, 0.08)' }} />
+            <div style={{ position: 'absolute', top: `${safeZone.top}px`, bottom: `${safeZone.bottom}px`, right: 0, width: `${safeZone.right}px`, background: 'rgba(220, 38, 38, 0.08)' }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${safeZone.bottom}px`, background: 'rgba(220, 38, 38, 0.08)' }} />
             <div
               style={{
                 position: 'absolute',
@@ -2756,7 +2760,7 @@ export const SlideCanvas: React.FC<SlideCanvasProps> = ({
                 bottom: `${safeZone.bottom}px`,
                 left: `${safeZone.left}px`,
                 right: `${safeZone.right}px`,
-                border: '2px dashed rgba(190, 75, 42, 0.55)',
+                border: '2px dashed rgba(190, 75, 42, 0.75)',
                 borderRadius: '12px',
               }}
             />
